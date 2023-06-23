@@ -1,0 +1,3 @@
+img:active {
+    transform: scale(0.9); /* decrease size when clicked */
+  }
