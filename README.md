@@ -37,16 +37,17 @@
 ## Roadmap/ TODO in no particular order ;) (Priority [1..5])
 - **[5]:** show an error texts if something unusal happen (especially a warning if the a user tried to add a link without being inside an iframe; no active iframe = nothing can be paste into an active iframe)
 - **[5]**: use the userName transmitted from the client to create samples not the API username (in the final version samples will be created by the admin, so the created username should be the one who initiate the creation of the sample) 
+- **[5]**: add uniqueID of the current ELN document
 - **[4]**: add a button to directly name the sample from extension interface
 - **[4]:** show frame sent to server after pushing record button instead of the video stream (maybe show a frame surrounding the decoded matrix code)
-- **[4]**: add customization support (edit the link texts, insert eLabFTW API calls)
+- **[4]**: add customization support (edit the link text, insert eLabFTW API calls)
 - **[4]**: create a final server structure to be used instead of "non SSL flask development server"
-- **[3]:** improved comprehensibility of the interface (hover infos, open-close camera button, easier to understand record button) 
+- **[3]**: improved comprehensibility of the interface (hover infos, open-close camera button, easier to understand record button) 
 - **[3]**: add eLabFTW support (full support)
+- **[3]**: add an option to not use the "record button" to link a sample (instead scan every second and insert link after sucessful decoding)
 - **[2]**: improve folder structure/ refactoring
 - **[2]**: include another decoder to also decode other kind of codes like QR codes and barcodes
 - **[2]**: add batch-scan possibility (function depends on user feedback)
 - **[2]**: package the extension to use it as regular extension
 - **[1]**: add button for switching cameras (for devices with front and back cameras, i.e. tablets or smartphones)
 - **[1]**: show a progress/ waiting bar
-
