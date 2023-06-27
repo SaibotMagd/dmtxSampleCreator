@@ -1,9 +1,10 @@
 var activeElement; // globale Variable
 
 function getActiveElement() {
-  if (document.activeElement.tagName == "IFRAME" && activeElement != document.activeElement) {
+  //if (document.activeElement.tagName == "IFRAME" && activeElement != document.activeElement) {
+  if (document.activeElement.tagName == "IFRAME") {
     activeElement = document.activeElement; // aktives Element speichern
-    console.log("new activeElement =", activeElement); // aktives Element ausgeben
+    //console.log("new activeElement =", activeElement); // aktives Element ausgeben
     //range();
 }}
 
@@ -67,7 +68,7 @@ button.addEventListener("click", function() {
     var userName = document.getElementById('witnessDocumentDialog').innerHTML
     var sIndex = userName.indexOf("work performed by ")
     var eIndex = userName.indexOf(" at the time specified ")
-    console.log(userName.substring(sIndex+18, eIndex))
+    //console.log(userName.substring(sIndex+18, eIndex))
     userName = userName.substring(sIndex+18, eIndex)
 
     var width = 600;
@@ -92,9 +93,9 @@ button.addEventListener("click", function() {
     xhr.open('POST', 'http://127.0.0.1:5000/upload', true);            
     xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
     xhrString = 'image=<dN>' + docName + '</dN>' + '<uN>' + userName + '</uN>'
-    console.log(xhrString)
+    //console.log(xhrString)
     xhr.send(xhrString + encodeURIComponent(dataURL));
-    console.log("I'm here...: ", xhr);   
+    //console.log("I'm here...: ", xhr);   
     // hide the video and show the frame instead till the server decoded the frame TODO: show frame its not working!    
     video.style.visibility = "hidden";
     
@@ -121,12 +122,12 @@ button.addEventListener("click", function() {
                     `${responseJson[decodeResult][0][slvlKeys[0]][0]["name"]}]</a></p>`
                   }
           else {
-          linkText = `<p><a href="${sampleUrl}" target="_blank" rel="noopener">[datamatrix code ${keys[0]} was found under the sample name: ` + 
+          linkText = `<p><a href="${sampleUrl}" target="_blank" rel="noopener">[datamatrix code ${keys[0]} was found under sample name: ` + 
             `${responseJson[decodeResult][0][slvlKeys[0]][0]["name"]} ` + 
             `created: ${responseJson[decodeResult][0][slvlKeys[0]][0]["created"]} ` +
             `by user: ${responseJson[decodeResult][0][slvlKeys[0]][0]["createdBy"]}]</a></p>`
           }
-                    console.log(linkText)
+                    console.log("I paste: ", linkText)
 
           // use this as placeholder
           //var text = "No new sample created";
@@ -138,32 +139,17 @@ button.addEventListener("click", function() {
           var iframeDoc = activeElement.contentDocument || activeElement.contentWindow.document; // iframe-Dokument auswählen
           var iframeBody = iframeDoc.body; // select body-Element of iframe-document
           var originalString = iframeBody.innerHTML; // read HTML-content of the iframes as string
-          var selection = iframeDoc.getSelection(); // read current cursor position inside iframe
-          /*           
-          for(let i = 0; i < selection.rangeCount; i++) {                                
-            console.log(i)              
-            console.log("Current elementranges: ", selection.getRangeAt(i));                  
-          }*/
+          var selection = iframeDoc.getSelection(); // read current cursor position inside iframe          
+          
+          console.log(iframeDoc)
+          console.log(iframeBody)        
+          console.log(selection)
           var range = selection.getRangeAt(0);
           var start = range.startOffset;
-          console.log("Current relative Position: ", start);
-          var absolutPos = start;
-          if (range.startContainer == "text"){
-            absolutPos += 3
-          }
+          var text = selection.anchorNode.data                    
           
-          var currElement = iframeDoc
-            while (range.startContainer != "iframe" && currElement.parentNode != null){
-              console.log("parent node: ", currElement.parentNode);                  
-              currElement = currElement.parentNode;
-              range = currElement.getRangeAt(0);
-              absolutPos += range.startOffset;
-            }
-            console.log("absolut pos: ", absolutPos)
+          selection.anchorNode.parentElement.innerHTML = text.slice(0,start) + ` ${linkText} ` + text.slice(start);          
           
-          var originalString = iframeBody.innerHTML; // HTML-Inhalt des iframes auslesen
-          var newString = originalString.slice(0, absolutPos) + text + originalString.slice(absolutPos); // neuen String erstellen
-          iframeBody.innerHTML = newString; // HTML-Inhalt des iframes setzen
           let keyboardEvent = new KeyboardEvent("keypress", {key: "U"});
           // Um das Ereignis an das iframeBody-Element zu senden
           iframeBody.dispatchEvent(keyboardEvent);         

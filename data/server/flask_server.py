@@ -73,7 +73,7 @@ def upload():
     print(f"docName: {docName} & userName: {userName} at {timestamp} from client")
     
     ## just to test the pipeline without using a webcam!!
-    #image = cv2.imread('/home/cni-adult/NFDI-coding/dmxCampage/images/single_dmx_example_small.jpg')
+    image = cv2.imread('/home/cni-adult/NFDI-coding/dmxCampage/images/single_dmx_example_small.jpg')
     #image = cv2.imread('/home/cni-adult/NFDI-coding/dmxCampage/images/multi_dmx_example_small.jpg')
 
     ## decode the image consisting datamatrixes into decode object

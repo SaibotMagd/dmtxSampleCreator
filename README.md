@@ -25,22 +25,28 @@
 [api_secrets.example](/data/secrets/api_secrets.example)
 
 ## version history
+
+### 0.2
+- bugfix: it now should read the cursor position (the correct cursor position should now be found and the link in the exact place (before and after blank characters are inserted & the link is always in its own line, because it is very long)
+- updated roadmap
 ### 0.1
 - first full working version (public release)
 - known bug: it doesn't read the cursor position precise enough, so better to use at the end or the beginning of a field
 - known bug: if a datamatrix code is being used more then once it only paste the link to the first entry found (what should happen if there's more then one entry connected to one datamatrix code? paste all codes? even if there're plenty?)
 
 ## Roadmap/ TODO in no particular order ;) (Priority [1..5])
-- **[5]**: paste the Link to the precise cursor position no matter what element the cursor is in (i.e. if there're to many p or td elements it doesn't really work)
+- **[5]:** show an error texts if something unusal happen (especially a warning if the a user tried to add a link without being inside an iframe; no active iframe = nothing can be paste into an active iframe)
+- **[5]**: use the userName transmitted from the client to create samples not the API username (in the final version samples will be created by the admin, so the created username should be the one who initiate the creation of the sample) 
+- **[4]**: add a button to directly name the sample from extension interface
 - **[4]:** show frame sent to server after pushing record button instead of the video stream (maybe show a frame surrounding the decoded matrix code)
-- **[4]:** show a error texts if something unusal happen (especially a warning if the a user tried to add a link without being inside an iframe; no active iframe = nothing can be paste into an active iframe)
-- **[4]**: use the userName transmitted from the client to create samples not the API username (in the final version samples will be created by the admin, so the created username should be the one who initiate the creation of the sample) 
-- **[3]**: package the extension to use it as regular extension
-- **[3]**: show a progress/ waiting bar
-- **[3]**: create a final server structure to be used instead of "non SSL flask development server"
-- **[2]:** improve visability of record button
-- **[2]**: add eLabFTW support
-- **[1]**: improve folder structure/ refactoring
-- **[1]**: include another decoder to also decode other kind of codes like QR codes and barcodes
-- **[1]**: add batch-scan possibility (function depends on user feedback)
+- **[4]**: add customization support (edit the link texts, insert eLabFTW API calls)
+- **[4]**: create a final server structure to be used instead of "non SSL flask development server"
+- **[3]:** improved comprehensibility of the interface (hover infos, open-close camera button, easier to understand record button) 
+- **[3]**: add eLabFTW support (full support)
+- **[2]**: improve folder structure/ refactoring
+- **[2]**: include another decoder to also decode other kind of codes like QR codes and barcodes
+- **[2]**: add batch-scan possibility (function depends on user feedback)
+- **[2]**: package the extension to use it as regular extension
+- **[1]**: add button for switching cameras (for devices with front and back cameras, i.e. tablets or smartphones)
+- **[1]**: show a progress/ waiting bar
 
