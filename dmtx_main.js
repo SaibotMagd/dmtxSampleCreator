@@ -1,175 +1,153 @@
-var activeElement; // globale Variable
+const video = document.createElement('video');
+const canvas = document.createElement('canvas');
+const context = canvas.getContext('2d');
+let intervalId;
+let activeElement; // globale Variable
 
-function getActiveElement() {
-  //if (document.activeElement.tagName == "IFRAME" && activeElement != document.activeElement) {
-  if (document.activeElement.tagName == "IFRAME") {
+function getActiveElement() {  
+  if (document.activeElement.tagName == "IFRAME") {  
     activeElement = document.activeElement; // aktives Element speichern
-    //console.log("new activeElement =", activeElement); // aktives Element ausgeben
-    //range();
 }}
+setInterval(getActiveElement, 1000); // call function every second
 
-function range(){
-  let ranges = [];
-  var iframeDoc = activeElement.contentDocument || activeElement.contentWindow.document; // iframe-Dokument auswählen
-  sel = iframeDoc.getSelection();
-  for(let i = 0; i < sel.rangeCount; i++) {
-  ranges[i] = sel.getRangeAt(i);
-  console.log(ranges[i])
-}
-}
-
-setInterval(getActiveElement, 1000); // Funktion jede Sekunde aufrufen
-
+document.body.appendChild(video);
 button.addEventListener("click", function() {
-    if (overlay.style.display === "none") {
-      overlay.style.display = "block";
-      record.style.display = "block";
-  
-      navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-        .then(function(stream) {
-          let video = document.getElementById("player");
-          if (!video){
-            video = document.createElement("video");
-            video.setAttribute("id", "player")
-          }
-          video.srcObject = stream;
-          video.autoplay = true;
-          video.style.width = "100%";
-          video.style.height = "100%";          
-          // mirror the camera image horizontal (dont do this for back camera!)
-          video.style.transform = "scaleX(-1)";
-          overlay.appendChild(video);
+  if (overlay.style.display === "none") {
+    overlay.style.display = "block";
+    //record.style.display = "block";
 
-          var canvas = document.createElement("canvas");
-          canvas.setAttribute("id", "canvas") 
-          canvas.width = video.videoWidth;
-          canvas.height = video.videoHeight;
-          canvas.hidden = true
-          //var context = canvas.getContext('2d');
-          //context.drawImage(video, 0, 0, canvas.width, canvas.height);
-          //var dataURL = canvas.toDataURL('image/jpeg');  
-          overlay.appendChild(canvas);
-        })
-        .catch(function(error) {
-          console.log(error);
-        });
-
-        
-
-    } else {
-      overlay.style.display = "none";
-      overlay.innerHTML = "";
-      record.style.display = "none"
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => {
+    let video = document.getElementById("player");
+    if (!video){
+      video = document.createElement("video");
+      video.setAttribute("id", "player")
     }
+    video.srcObject = stream;
+    video.play();
+    overlay.appendChild(video);
+    intervalId = setInterval(() => {
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+      //canvas = RGB2Grey(canvas) // doesnt work yet
+      const dataURL = canvas.toDataURL('image/jpeg', 1.0);
+      sendToServer(dataURL);      
+    }, 1000);
   });
+  }
+  else {
+    stopCamera();
+    clearInterval(intervalId)
+  }}
+  );
 
-  record.addEventListener('click', async () => {     
-    var docName = document.getElementById('recordNameInBreadcrumb').innerHTML
-    var userName = document.getElementById('witnessDocumentDialog').innerHTML
-    var sIndex = userName.indexOf("work performed by ")
-    var eIndex = userName.indexOf(" at the time specified ")
-    //console.log(userName.substring(sIndex+18, eIndex))
-    userName = userName.substring(sIndex+18, eIndex)
+function sendToServer(dataURL) {
+  let docName = document.getElementById('recordNameInBreadcrumb').innerHTML
+  // scrap username from current page
+  let userName = document.getElementById('witnessDocumentDialog').innerHTML
+  let sIndex = userName.indexOf("work performed by ")
+  let eIndex = userName.indexOf(" at the time specified ")
+  //console.log(userName.substring(sIndex+18, eIndex))
+  userName = userName.substring(sIndex+18, eIndex)
+  let xhrString = 'image=<dN>' + docName + '</dN>' + '<uN>' + userName + '</uN>'
 
-    var width = 600;
-    var height = 800;
-    
-    var video = document.getElementById('player');
-    var canvas = document.getElementById('canvas');
-    //canvas.width = video.videoWidth;
-    //canvas.height = video.videoHeight;
-    canvas.width = width;
-    canvas.height = height;
-    var context = canvas.getContext('2d');
-    context.drawImage(video, 0, 0, width, height);
-    var dataURL = canvas.toDataURL('image/jpeg');  
-    overlay.appendChild(canvas);
-    // image seems to be created! console.log(dataURL);
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', 'http://127.0.0.1:5000/upload', true);            
+  xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');  
+  xhr.onload = () => {
+    if (xhr.readyState === 4 && xhr.status === 200) {
+      if (xhr.responseText != '0') {        
+        clearInterval(intervalId);
+        window.stop();
+        getActiveElement();
+        let iframeDoc = activeElement.contentDocument || activeElement.contentWindow.document; 
+        let response = JSON.parse(xhr.responseText)
+        console.log(response);
+        pasteUrl(JSON.parse(xhr.responseText), iframeDoc);
+        stopCamera();
+        return;
+      }
+    }
+    console.error(xhr.statusText);
+  };
+  xhr.send(xhrString + encodeURIComponent(dataURL));
+}
 
-    // Send the image to the server
-    var xhr = new XMLHttpRequest();
-    
-    //change in https to use ssl (need to create a working certificate!)
-    xhr.open('POST', 'http://127.0.0.1:5000/upload', true);            
-    xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8');
-    xhrString = 'image=<dN>' + docName + '</dN>' + '<uN>' + userName + '</uN>'
-    //console.log(xhrString)
-    xhr.send(xhrString + encodeURIComponent(dataURL));
-    //console.log("I'm here...: ", xhr);   
-    // hide the video and show the frame instead till the server decoded the frame TODO: show frame its not working!    
-    video.style.visibility = "hidden";
-    
-    
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState === 4 && xhr.status === 200) {                                   
-        var response = JSON.parse(xhr.responseText);
-        console.log("Write to clipboard: ", response);
-        if (!(Array.isArray(response))) {            
-          var responseJson = response
-          var keys = Object.keys(responseJson)
-          console.log("decoded DM = ", keys);
-          var decodeResult = keys[0];
-          console.log("decoded rect_coord = ", responseJson[decodeResult][0]['rect_height']);
-          slvlKeys = Object.keys(responseJson[decodeResult][0]);
-          console.log("slvlKeys:", slvlKeys);
-          console.log("sampleEntry ", (responseJson[decodeResult][0][slvlKeys[0]][0]));
+function pasteUrl(response, iframeDoc) {
+  // write sucessful decoding into innerHTML
+  let responseJson = response
+  let keys = Object.keys(responseJson)  
+  let decodeResult = keys[0];  
+  let slvlKeys = Object.keys(responseJson[decodeResult][0]);  
+  console.log("sampleEntry ", (responseJson[decodeResult][0][slvlKeys[0]][0]));
 
-          //secondlvl key name shows the whole name for the sample entry consisting of "decodedDatamatrixCode_nameOfOpenRspaceDocument_createdTimestamp"
-          var sampleUrl = responseJson[decodeResult][0][slvlKeys[0]][0]["link"];          
-          sampleUrl = sampleUrl.replace(/https?:\/\/[^\/]+/, "");
-          if (responseJson[decodeResult][0][slvlKeys[0]][0]["newlyCreated"]) {
-          linkText = `<p><a href="${sampleUrl}" target="_blank" rel="noopener">[new sample entry has just been created from datamatrix code:  ` + 
-                    `${responseJson[decodeResult][0][slvlKeys[0]][0]["name"]}]</a></p>`
-                  }
-          else {
-          linkText = `<p><a href="${sampleUrl}" target="_blank" rel="noopener">[datamatrix code ${keys[0]} was found under sample name: ` + 
-            `${responseJson[decodeResult][0][slvlKeys[0]][0]["name"]} ` + 
+  //secondlvl key name shows the whole name for the sample entry consisting of "decodedDatamatrixCode_nameOfOpenRspaceDocument_createdTimestamp"
+  let sampleUrl = responseJson[decodeResult][0][slvlKeys[0]][0]["link"];          
+  sampleUrl = sampleUrl.replace(/https?:\/\/[^\/]+/, "");
+  if (responseJson[decodeResult][0][slvlKeys[0]][0]["newlyCreated"]) {
+  var linkText = `<a href="${sampleUrl}" target="_blank" rel="noopener">[datamatrix code:  ` + 
+            `${responseJson[decodeResult][0][slvlKeys[0]][0]["name"]} NEW created sample entry ` + 
             `created: ${responseJson[decodeResult][0][slvlKeys[0]][0]["created"]} ` +
-            `by user: ${responseJson[decodeResult][0][slvlKeys[0]][0]["createdBy"]}]</a></p>`
+            `by user: ${responseJson[decodeResult][0][slvlKeys[0]][0]["createdBy"]}]</a>`
           }
-                    console.log("I paste: ", linkText)
+  else {
+  var linkText = `<a href="${sampleUrl}" target="_blank" rel="noopener">[datamatrix code ${keys[0]} found sample name: ` + 
+    `${responseJson[decodeResult][0][slvlKeys[0]][0]["name"]} ` + 
+    `created: ${responseJson[decodeResult][0][slvlKeys[0]][0]["created"]} ` +
+    `by user: ${responseJson[decodeResult][0][slvlKeys[0]][0]["createdBy"]}]</a>`
+  }
+  
+  let iframeBody = iframeDoc.body; // select body-Element of iframe-document  
+          
+  console.log("activeElement post-content: " + ` ${activeElement} `)
+  let selection = iframeDoc.getSelection(); // read current cursor position inside iframe          
+  
+  //console.log(selection)
+  let range = selection.getRangeAt(0);
+  let start = range.startOffset;
+  
+  // take one of 2 possible sources for data inside the element (with one is filled depends on the element class)
+  let ogText = selection.anchorNode.data;                    
+  if (!(typeof ogText === "string" || ogText instanceof String)) {
+    ogText = selection.anchorNode.innerHTML;                    
+    //console.log("took from innerText:", ogText)
+  }
+  // cut the prior text in iframe element to insert the link between it
+  selection.anchorNode.parentElement.innerHTML = (ogText.slice(0,start) + ` ${linkText} ` + ogText.slice(start));          
+  // hit a keypress afterwords because the rspace page doesn't recognize the change of innerHTML
+  // the keypress force the rspace page to save the change in innerHTML
+  let keyboardEvent = new KeyboardEvent("keypress", {key: "U"});        
+  iframeBody.dispatchEvent(keyboardEvent);     
+}
 
-          // use this as placeholder
-          //var text = "No new sample created";
-          // use the whole response (have to be a string!, so a json element need to be formated first)
-          // to send the whole json back to the server will be necessary to mark the code found onto the image
-          var text = linkText;
-          // example text: "<p><a href="/inventory/sample/65541">Newly created sample @timestamp, for Name, by Username, link: https://rstest.int.lin-magdeburg.de/inventory/sample/65541</a></p>"
-          
-          var iframeDoc = activeElement.contentDocument || activeElement.contentWindow.document; // iframe-Dokument auswählen
-          var iframeBody = iframeDoc.body; // select body-Element of iframe-document
-          var originalString = iframeBody.innerHTML; // read HTML-content of the iframes as string
-          var selection = iframeDoc.getSelection(); // read current cursor position inside iframe          
-          
-          console.log(iframeDoc)
-          console.log(iframeBody)        
-          console.log(selection)
-          var range = selection.getRangeAt(0);
-          var start = range.startOffset;
-          var text = selection.anchorNode.data                    
-          
-          selection.anchorNode.parentElement.innerHTML = text.slice(0,start) + ` ${linkText} ` + text.slice(start);          
-          
-          let keyboardEvent = new KeyboardEvent("keypress", {key: "U"});
-          // Um das Ereignis an das iframeBody-Element zu senden
-          iframeBody.dispatchEvent(keyboardEvent);         
-        }        
-            else {              
-              console.log("nothing to be found!")             
-              }
-            }
-      // close the camera
-      let stream = video.srcObject;          
-      let videoTracks = stream.getVideoTracks();          
-      videoTracks.forEach(track => track.stop());
-      button.click(); 
-      } 
-      /*
-              
-              console.log("I keystroked ${input}")
-            };
-        }};
-    // send the current frame of the video stream to the webserver
-    */
-    
-  });  
+function stopCamera() {    
+  // close the camera
+  let video = document.getElementById("player")
+  if (video){
+  let stream = video.srcObject;        
+  let videoTracks = stream.getVideoTracks();          
+  videoTracks.forEach(track => track.stop());
+  video.srcObject = null; 
+  }
+  overlay.style.display = "none";
+  overlay.innerHTML = "";
+  //record.style.display = "none"  
+}
+
+/* doesnt work
+function RGB2Grey(input) {
+  cnx.drawImage(input, 0 , 0);
+  let width = input.width;
+  let height = input.height;
+  let imgPixels = cnx.getImageData(0, 0, width, height);
+
+  for(let y = 0; y < height; y++){
+      for(let x = 0; x < width; x++){
+          let i = (y * 4) * width + x * 4;
+          let avg = (imgPixels.data[i] + imgPixels.data[i + 1] + imgPixels.data[i + 2]) / 3;
+          imgPixels.data[i] = avg;
+          imgPixels.data[i + 1] = avg;
+          imgPixels.data[i + 2] = avg;
+      }
+  }
+  return imgPixels}
+*/

@@ -1,8 +1,5 @@
 import os
 from datetime import datetime
-from rspace_client.inv import inv
-from rspace_client.eln import eln
-import rspace_client
 import cv2
 from pylibdmtx.pylibdmtx import decode
 ## need: sudo apt-get install -y libdmtx-dev
@@ -58,7 +55,7 @@ def upload():
     ## save the image send to server, from client into image variable
     image = request.form['image']
 
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")      
+    #timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")      
     #print(f"Here I'm: {timestamp}")
     
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")      
@@ -73,8 +70,8 @@ def upload():
     print(f"docName: {docName} & userName: {userName} at {timestamp} from client")
     
     ## just to test the pipeline without using a webcam!!
-    #image = cv2.imread('/home/cni-adult/NFDI-coding/dmxCampage/images/single_dmx_example_small.jpg')
-    #image = cv2.imread('/home/cni-adult/NFDI-coding/dmxCampage/images/multi_dmx_example_small.jpg')
+    #image = cv2.imread('/home/cni-adult/NFDI-coding/single_dmtx_code.jpeg')    
+    #image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) #calc greyscale image; should decrease the decode speed by half without precision loss
 
     ## decode the image consisting datamatrixes into decode object
     decodeResult = decode(image)
@@ -88,7 +85,7 @@ def upload():
     #build a result dictionary and code it as json to send back to client       
     if decodeResult != []:        
         decodeResult = decode_list_to_dict(decodeResult)
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")      
+        #timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")      
         #print(f"Non empty result: {decodeResult}, {timestamp}")
         
         ## todo: implement a batch process
@@ -111,7 +108,7 @@ def upload():
         ## its the better way to send the whole json so the finding(s) can be mark on the image in the browser
         return joinResults
     else:    
-        return []      
+        return '0'      
 
 def get_sample_data_from_barcode(sampleParameter, elnName='rspace'):
     apiParams = (get_hidden_api_parameters())
@@ -138,10 +135,11 @@ def get_sample_data_from_barcode(sampleParameter, elnName='rspace'):
                 insertDict = shape_result_dict(insertDict, r, 1)   
                 return insertDict                 
             ## shape the resulted sample entry to decrease the data to be send to the client
+            # should return the last record found with the particular dmtx number
             if r['totalHits'] > 0:
                 insertDict = {}
                 for records in r["records"]:   
-                    print("I found an prior entry: ", records) 
+                    print("I found an prior entry: ", records.keys()) 
                     insertDict = shape_result_dict(insertDict, records, 0)                
                 return insertDict
     ## return the same dictionary no matter if a sample was newly created or successfully found (keys: ['globalId': ['created', 'createdBy', 'link', 'newlyCreated'])
@@ -152,14 +150,14 @@ def shape_result_dict(insertDict, records, newlyCreated):
     # shape the link by delete the ["api","v1"] (& the "s" from sample) parts out of it, as the search/create json lacks the correct link 
     # (i.e. link provided by json: 'https://rstest.int.lin-magdeburg.de/api/inventory/v1/samples/98322' transformed to: 'https://rstest.int.lin-magdeburg.de/inventory/sample/98322')
     link = records["_links"][0]["link"]
-    link = '/'.join(link.split('/')[:3] + ['inventory'] +['sample', link.split('/')[-1]])
+    link = '/'.join(link.split('/')[:3] + ['inventory'] +['sample', str(records["id"])])
     insertDict.update({f"{records['globalId']}": [{
                             "name": records["name"],
                             "created": records["created"],
                             "createdBy": records["createdBy"],
                             "link": link,
                             "newlyCreated" : newlyCreated
-        }]
+                            }]
                     })
     return insertDict
 

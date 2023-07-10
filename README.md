@@ -26,6 +26,11 @@
 
 ## version history
 
+### 0.3
+- use greyscale images to decrease the imagesize send to the server, it also speeds up the decoding
+- bugfix: deactivate camera after click on "link sample" button and after insert a link to the ELN (no matter independend of sucess)
+- known Bug: impossible to insert multiple links into an empty field without saving between inserts
+
 ### 0.2
 - bugfix: it now should read the cursor position (the correct cursor position should now be found and the link in the exact place (before and after blank characters are inserted & the link is always in its own line, because it is very long)
 - updated roadmap
@@ -35,7 +40,9 @@
 - known bug: if a datamatrix code is being used more then once it only paste the link to the first entry found (what should happen if there's more then one entry connected to one datamatrix code? paste all codes? even if there're plenty?)
 
 ## Roadmap/ TODO in no particular order ;) (Priority [1..5])
-- **[5]:** show an error texts if something unusal happen (especially a warning if the a user tried to add a link without being inside an iframe; no active iframe = nothing can be paste into an active iframe)
+- **[5]**: speed up the decoding
+- **[5]**: change the workflow so it scans for codes all the time and only close and insert after it found something (no more record button pressing)
+- **[5]**: show an error texts if something unusal happen (especially a warning if the a user tried to add a link without being inside an iframe; no active iframe = nothing can be paste into an active iframe)
 - **[5]**: use the userName transmitted from the client to create samples not the API username (in the final version samples will be created by the admin, so the created username should be the one who initiate the creation of the sample) 
 - **[5]**: add uniqueID of the current ELN document
 - **[4]**: add a button to directly name the sample from extension interface
