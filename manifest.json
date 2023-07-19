@@ -24,7 +24,7 @@
   "content_scripts": [
     {
       "matches": ["*://*.lin-magdeburg.de/workspace/editor/structuredDocument*"],
-      "js": ["create_buttons.js","dmtx_main.js"],
+      "js": ["create_buttons.js", "dmtx_main.js", "/data/qrScript.js"],
       "css": ["/data/style.css"]
     }
   ]

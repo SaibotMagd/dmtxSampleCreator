@@ -1,3 +1,102 @@
 img:active {
-    transform: scale(0.9); /* decrease size when clicked */
+  transform: scale(0.9); /* decrease size when clicked */
+}
+#button:hover::before {
+  content: "Insert a sample link from inventory or create a new sample";
+  position: absolute;
+  background-color: rgb(245,245,245);
+  color: #fff;
+  padding: 5px;
+}
+#insertButton:hover::before {
+  content: "Insert the link to the data shown above";
+  position: absolute;
+  background-color: rgb(245,245,245);
+  color: #fff;
+  padding: 5px;
+}
+#resultField {
+  position: relative;
+  margin-left: inherit;
+  top: 10%;
+  left: 2%;
+  font-size: 1.5em;   
+  width: 95%;
+  height: 60%;
+  font-family: Arial;
+  color: black;
+  background-color: rgb(245,245,245);
+  border: 5px solid green;
+  overflow-y: scroll;
+}
+#inputField {    
+  position: relative;
+  margin-left: inherit;
+  top: 15%;
+  left: 10%;
+  font-size: 1.5em;
+  width: 70%;
+  height: 10%;
+  border: 5px dotted rgb(230, 176, 60);
+  color: rgb(160, 157, 157);
+  background-color: rgb(245,245,245);
+}
+
+#msgBoard {
+  position: relative;
+  margin-left: inherit;
+  word-wrap: break-word;
+  top: 5%;
+  left: 5%;
+  font-size: 30px;    
+  width: 90%;
+  height: 10%;
+  color: rgb(0, 0, 0);
+  background-color: green;
+  border: 5px solid green;
+}    
+#buttonFrame {
+  position: absolute;
+  top: 75%;
+  left: 40%;
+  transform: translate(-50%, -50%);
+}
+#reader{
+
+  margin:auto;
+  position:relative;    
+  z-index: 100;
+}
+#reader .screen
+{
+  margin:auto;
+  background: transparent;
+  background-size:cover;
+  background-color: rgba(0,0,0,.2);
+}
+
+#reader .scan
+{
+  width:100%;
+  height:5px;
+  background: transparent;
+  background-color:rgba(102, 255, 255, 0.5);
+  position:absolute;
+  z-index:10000;
+   -moz-animation: scan 5s infinite;
+  -webkit-animation: scan 5s infinite;
+  animation: scan 5s infinite;
+   -webkit-animation-direction: alternate-reverse;
+  box-shadow:0px 0px 30px rgba(102, 255, 255, 0.5);    
+}
+
+@-webkit-keyframes scan {
+  0%, 100% {
+    -webkit-transform: translateY(0);
+    transform: translateY(0);
   }
+  100% {
+    -webkit-transform: translateY(600px);
+    transform: translateY(600px);
+  }
+}

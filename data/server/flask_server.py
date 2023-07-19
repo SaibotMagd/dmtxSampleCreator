@@ -1,8 +1,6 @@
 import os
 from datetime import datetime
 import cv2
-from pylibdmtx.pylibdmtx import decode
-## need: sudo apt-get install -y libdmtx-dev
 import argparse
 from flask import Flask, redirect, request, jsonify
 from flask_cors import CORS
@@ -16,35 +14,6 @@ import ssl
 
 globalResult = []
 
-def base64_to_image(base64_string):
-    imgdata = base64.b64decode(base64_string)    
-    #image = np.frombuffer(imgdata)
-    image = np.array(bytearray(imgdata), dtype=np.uint8)
-    image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-    return image
-
-def decode_list_to_dict(decsList):
-    decDict = {}
-    if len(decsList) > 1:
-        for i, decList in enumerate(decsList):                                
-            decDict.update({decsList[0].data.decode('utf-8'):
-                            {'data': decList.data.decode('utf-8'), 
-                            'rect_left': decList.rect.left,
-                            'rect_top': decList.rect.top,
-                            'rect_width': decList.rect.width,
-                            'rect_height': decList.rect.height
-                            }
-                            })
-    else:
-        decDict.update({decsList[0].data.decode('utf-8'):{ 
-                            'rect_left': decsList[0].rect.left,
-                            'rect_top': decsList[0].rect.top,
-                            'rect_width': decsList[0].rect.width,
-                            'rect_height': decsList[0].rect.height                            
-                            }
-                            })
-    return decDict
-
 app = Flask(__name__)
 CORS(app)
 
@@ -52,98 +21,59 @@ CORS(app)
 def upload():
     
     import sys
-    ## save the image send to server, from client into image variable
-    image = request.form['image']
+    request_data = request.get_json()
+    print("the client sent: ", request_data)                         
+    ## {'userName': 'gottschall01', 'docName': 'SJHP3 ELISA', 'uniqueId': 'SD546', 'decodedText': '210076'}
 
-    #timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")      
-    #print(f"Here I'm: {timestamp}")
+    if request_data['newSample'] == 0:
+        sampleEntry = get_sample_data_from_barcode(request_data)
+
+    ## create a dict consisting of the necessary infos from client
+    if request_data['newSample'] == 1:    
+        ## use the sampleParameter dict with docName, userName, barcode to create a new sample out of these infos
+        r = set_new_sample(request_data, elnName='rspace')                
+        sampleEntry = shape_result_dict({}, r, 1)           
     
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")      
-    print(f"The size of the transfered image is: {sys.getsizeof(image)}, {timestamp}")
-    ## find and save the documentName of the current open document in the ELN (will be used as default sampleName)
-    pos = [image.find("<dN>"), image.find("</dN>")]
-    docName = image[pos[0]+4:pos[1]]
-    pos = [image.find("<uN>"), image.find("</uN>")]
-    userName = image[pos[0]+4:pos[1]]    
-    image = base64_to_image(image[pos[1]+27:]) 
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")      
-    print(f"docName: {docName} & userName: {userName} at {timestamp} from client")
-    
-    ## just to test the pipeline without using a webcam!!
-    #image = cv2.imread('/home/cni-adult/NFDI-coding/single_dmtx_code.jpeg')    
-    #image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY) #calc greyscale image; should decrease the decode speed by half without precision loss
-
-    ## decode the image consisting datamatrixes into decode object
-    decodeResult = decode(image)
-    
-    ## for testing set empty result
-    #result = []
-
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")      
-    print(f"Decode result: {decodeResult}, {timestamp}")
-    
-    #build a result dictionary and code it as json to send back to client       
-    if decodeResult != []:        
-        decodeResult = decode_list_to_dict(decodeResult)
-        #timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")      
-        #print(f"Non empty result: {decodeResult}, {timestamp}")
-        
-        ## todo: implement a batch process
-        """for key in list(result.keys()):
-            print(f"I set barcode nr: {key}")        """
-
-        ## create a dict consisting of the necessary infos from client
-        sampleParameter = {'docName': docName,
-                   'createdBy': userName,
-                   'barcode': list(decodeResult.keys())[0]}
-
-        sampleEntry = get_sample_data_from_barcode(sampleParameter)
-
-        joinResults = {} # create an empty dictionary
-        for key in decodeResult: # iterate over the keys of test
-            joinResults[key] = [decodeResult[key]] # assign the value of test[key] as a list to end[key]
-        for subkey in sampleEntry: # iterate over the keys of best
-            joinResults[key][0][subkey] = sampleEntry[subkey] # assign the value of best[subkey] to end[key][0][subkey]                
-
-        ## its the better way to send the whole json so the finding(s) can be mark on the image in the browser
-        return joinResults
-    else:    
-        return '0'      
+    return sampleEntry
+    #always return 0 for testing purposes!
+    #return "0"
 
 def get_sample_data_from_barcode(sampleParameter, elnName='rspace'):
-    apiParams = (get_hidden_api_parameters())
+    apiParams = get_secret_api_parameters()
     url = os.path.join(*[apiParams['apiUrl'], apiParams['apiInventoryPath'], apiParams['apiSearchFile']])
     headers = {"accept": "application/json", "apiKey": f"{apiParams['apiKey']}"}    
     
     ## create the search-json for searching in rspace-inventory
     if elnName == 'rspace':
         queryHeaders = ["datamatrix code: ", "Scanned Unknown: "]
+        insertDict = {}
         for i, queryHead in enumerate(queryHeaders):
-            params = {"query": f"{queryHead}{sampleParameter['barcode']}", "pageNumber": 0, "pageSize": 20, "orderBy": "name asc"}    
+            params = {"query": f"{queryHead}{sampleParameter['decodedText']}", "pageNumber": 0, "pageSize": 20, "orderBy": "name asc"}    
             print(params)
             ## send get call to server
             r = requests.get(url, params=params, headers=headers, verify=False)    
             r = r.json()    
-            ## create a new sample if the current barcode isn't already in the database
-            if r['totalHits'] == 0:     
-                ## if not all queryHeaders being checked, continue using the next one
-                if i != len(queryHeaders)-1:
-                    continue
-                ## use the sampleParameter dict with docName, userName, barcode to create a new sample out of these infos
-                r = set_new_sample(sampleParameter, elnName='rspace')        
-                insertDict = {}
-                insertDict = shape_result_dict(insertDict, r, 1)   
-                return insertDict                 
-            ## shape the resulted sample entry to decrease the data to be send to the client
-            # should return the last record found with the particular dmtx number
-            if r['totalHits'] > 0:
-                insertDict = {}
-                for records in r["records"]:   
-                    print("I found an prior entry: ", records.keys()) 
-                    insertDict = shape_result_dict(insertDict, records, 0)                
-                return insertDict
+            ## build a dict consisting all samples with he particular barcode in database
+            insertDict = reshape_request(r, insertDict)            
+        ## if no sample have been found send a 0 back to client to initiate the "ask for create sample frame"
+        if insertDict == {}:
+            options = get_secret_api_parameters(type='options')
+            return {'0': options['defaultSampleNameOrder']}    
+        else: 
+            return insertDict
     ## return the same dictionary no matter if a sample was newly created or successfully found (keys: ['globalId': ['created', 'createdBy', 'link', 'newlyCreated'])
-    
+
+## select if 
+def reshape_request(r, insertDict):  
+
+    ## shape the resulted sample entry to decrease the data to be send to the client
+    # should return the last record found with the particular dmtx number
+    if r['totalHits'] > 0:
+        for records in r["records"]:   
+            print("I found an prior entry: ", records.keys()) 
+            insertDict = shape_result_dict(insertDict, records, 0)                
+    return insertDict    
+
 
 def shape_result_dict(insertDict, records, newlyCreated):
     ## create a small dict out of the whole sample result json
@@ -161,19 +91,43 @@ def shape_result_dict(insertDict, records, newlyCreated):
                     })
     return insertDict
 
-def set_new_sample(sampleParameter, elnName='rspace'):
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
-    apiParams = (get_hidden_api_parameters())
+def set_new_sample(sampleParameter, secrets_source='', elnName='rspace'):
+    ## get the parameters for api connection
+    apiParams = get_secret_api_parameters(type=elnName)
+    ## get the options (see api_secrets.json)
+    options = get_secret_api_parameters(type='options')
     url = os.path.join(*[apiParams['apiUrl'], apiParams['apiInventoryPath'], apiParams['apiSampleFile']])
     headers = {"accept": "application/json", "Content-Type": "application/json", "apiKey": f"{apiParams['apiKey']}"}    
 
     if elnName == 'rspace':
+        ## create the name of the new sample from options (see api_secrets.json)
+        sampleName = ""
+        for namePart in options['defaultSampleNameOrder']:
         ## create the json for sample creation in rspace
-        params = {"name": f"{sampleParameter['barcode']}_{sampleParameter['docName']}_{sampleParameter['createdBy']}_{timestamp}", \
-                    "templateId": "65540", \
-                    "barcodes": [{"data": f"{sampleParameter['barcode']}", "description": f"datamatrix code: {sampleParameter['barcode']}"}] \
+        ## Warning! If the description is changed, this newly created sample won't be found anymore get_sample_data_from_barcode() function 
+        ## if changing is indeniable the whole history of description texts have to be added to list of queryHeaders in the get_sample_data_from_barcode() function
+        ## this will increase the runtime of the code as it have to send a query for each of the possible descriptions in the queryHeader list
+            if sampleName == "": 
+                sampleName = sampleParameter[namePart]
+                continue
+            if namePart != 'timestamp':
+                sampleName = sampleName + "_" + sampleParameter[namePart]
+            else:
+                timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
+                sampleName = sampleName + "_" + timestamp
+        ## the field "createdBy" is immutable (autofilled with user called the API)
+        ## TODO: talk about if we could save the API keys for each user on server!? would we create the API keys without involving the user?
+            params = {"name": sampleName, \
+                    "barcodes": [{"data": f"{sampleParameter['decodedText']}", "description": f"datamatrix code: {sampleParameter['decodedText']}"}], \
+                    "extraFields": [{ "name": "defaultELNconnection", "type": "text", "content" : sampleName}]
                 }
-    
+                                          
+    ## if a custom sample name is provided, overwrite the sampleName (the default Name will still be saved as extraField: defaultELNconnection for consistency)
+    if 'customName' in sampleParameter:
+        params['name'] = sampleParameter['customName']
+    ## if a template Id is provided, create a sample depending on this template (i.e. 65540 as special sample template)
+    if 'templateId' in sampleParameter:
+        params['templateId'] = sampleParameter['templateId']
     ## send the create sample call to server    
     r = requests.post(url, headers=headers, verify=False, data=json.dumps(params))
     ## transform the response to json to get the sample entry    
@@ -181,11 +135,13 @@ def set_new_sample(sampleParameter, elnName='rspace'):
     return r
 
     
-def get_hidden_api_parameters(elnName='rspace'):
-    if elnName == 'rspace':
-        with open("../secrets/api_secrets.json") as f:
-            data = json.load(f)
-            return data[elnName][0]
+## load the secret infos about the API connection from api_secrets.json
+## source: location of the api_secrets.json file
+## type: ["rspace", "elabFTW", "options"]
+def get_secret_api_parameters(source='../secrets/api_secrets.json', type='rspace'):
+    with open(source) as f:    
+        data = json.load(f)
+        return data[type][0]
     return 0
 
 """@app.before_request
