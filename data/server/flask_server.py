@@ -35,8 +35,6 @@ def upload():
         sampleEntry = shape_result_dict({}, r, 1)           
     
     return sampleEntry
-    #always return 0 for testing purposes!
-    #return "0"
 
 def get_sample_data_from_barcode(sampleParameter, elnName='rspace'):
     apiParams = get_secret_api_parameters()
@@ -45,7 +43,7 @@ def get_sample_data_from_barcode(sampleParameter, elnName='rspace'):
     
     ## create the search-json for searching in rspace-inventory
     if elnName == 'rspace':
-        queryHeaders = ["datamatrix code: ", "Scanned Unknown: "]
+        queryHeaders = ["datamatrix code: ", "Scanned Unknown: ", "Scanned QR Code: "]
         insertDict = {}
         for i, queryHead in enumerate(queryHeaders):
             params = {"query": f"{queryHead}{sampleParameter['decodedText']}", "pageNumber": 0, "pageSize": 20, "orderBy": "name asc"}    

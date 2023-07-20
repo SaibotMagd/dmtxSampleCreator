@@ -2,19 +2,22 @@
 
 # dmtxSampleCreator
 
-- browser extension: reads datamatrix code (not other kind of codes) from camera and either link to an already existing sample entry or create a sample in an inventory and paste the link into an text field in rspace ELN (for other ELN read [Roadmap](README.md#roadmap-priority-15)
+- browser extension: reads datamatrix code (not other kind of codes) from camera and either link to an already existing sample entry or create a sample in an inventory and paste the link into an text field in [rspace ELN](https://www.researchspace.com/) (support for eLabFTW ELN is work in progress, check out the [Roadmap](README.md#current-roadmap))
 
 ## how to use
 
-- edit a basic document
-- open a iframe (i.e. regular custom field) inside the iframe
-- mark the place where you want to insert the link with the cursor (blinking text cursor)
-- click the "link sample" button in the top-left corner the browser camera should open in front of the ELN (camera connection maybe have to be allowed once)
-- present datamatrix code in front of the camera (a sharp image is more important than the size of the code within the image)
-- click the "record" button below the "link sample" button
-- the link should be paste at cursor position
-- the description of the pasted link clearly shows if it was a datamatrix code previously assigned to a sample or if it was just created
-  [practical example](example/tutorial_example.md)
+- **Hint:** skip reading and check out the [step-by-step guide](example/tutorial_example.md) or the [Schritt-für-Schritt Anleitung](example/tutorial_example_de.md)
+- open a basic electronic notebook document
+- open the edit mode for an iframe (i.e. regular custom text field)
+- set the text cursor where to insert the link(s) (blinking text cursor)
+- click the "link sample" button (top-left corner), the browser camera should open in transparent overlay in front of the ELN (camera connection maybe have to be allowed once)
+- present the code (any code supported from [html5-qrcode](https://github.com/mebjas/html5-qrcode)) in front of the camera till it recognize the code (size matters!)
+- if a green text field pops up after decoding this code have been found in the database and the results will be shown below
+  - the "thumb up - insert button" insert these search results as link(s) to the document
+- if a yellow text field pops up after decoding, this code couldn't be found in the database and can be used to create a new sample entry connecting the current ELN document and the physical sample connected to the code
+  - a custom sample name for the newly created sample can be insert into the yellow dotted line text field below
+  - or use the already prefilled default sample name
+  - the "thumb up - insert button" create a new sample entry and insert a link to the sample created into the document
 
 ## dependencies (incomplete, use environment.yml for full list)
 
@@ -22,12 +25,11 @@
 - Flask >= 2.2.2
 - Fask-Cors >= 3.0.10
 - requests >= 2.31.0
-- pylibdmtx >= 0.1.10
 
 ## configuration/ secret file
 
-- fill the api_secrets.example file and rename it to .json
-  [api_secrets.example](/data/secrets/api_secrets.example)
+- fill the api_secrets.example file and rename it to just ".json"
+  [api_secrets.example](/data/secrets/api_secrets.example.json)
 
 ## version history
 
@@ -52,7 +54,8 @@
   - BUT this solution is often slower (because of worse segmentation algorithm), have issues with smaller codes and some "unusal structured" codes (see TODO [Roadmap](README.md#roadmap-priority-15))
   - since HTML5Qrcode support a lot of different codes it now can use mostly every code exist (i.e. QRcode, barcode, datamatrix etc.)
   - no more privacy issues as no image is stored or leaves the local computer
-- a lot of refactoring and restructuring
+- added a german translation of the "step-by-step tutorial"
+- a lot of refactoring, restructuring of the sourcecode and changes of the roadmap priorities
 
 ### 0.3
 
@@ -71,21 +74,24 @@
 - known bug: it doesn't read the cursor position precise enough, so better to use at the end or the beginning of a field
 - known bug: if a datamatrix code is being used more then once it only paste the link to the first entry found (what should happen if there's more then one entry connected to one datamatrix code? paste all codes? even if there're plenty?)
 
-## current Roadmap/ TODO in no particular order ;) (Priority [1..5])
+## current Roadmap
 
-(TODO: create a mode to search for samples anywhere not only inside a document)
+*List in no particular order ;) (Priority [1..5])*
 
-- **[5]**: speed up the decoding, it has not really gotten better with frontend decoding
+- **[5]**: prevent barcode entries from being deleted
 - **[5]**: show an error texts if something unusal happen (especially a warning if the a user tried to add a link without being inside an iframe; connection issues)
 - **[5]**: create a final server structure to be used instead of "non SSL flask development server"
 - **[5]**: test the extension on the most likely end-user devices (modern android tablet, aged android smartphone, windows 11 ms surface; please do not ask for apple support, this will never exist, but could be blocked in the future for security reasons)
+- **[4]**: create a mode to search for samples anywhere not only inside a document
 - **[4]**: add more customizations (edit the link text, insert eLabFTW API calls)
+- **[3]**: add button for switching cameras (for devices with front and back cameras, i.e. tablets or smartphones)
 - **[3]**: improved comprehensibility of the interface (hover infos, more intuitve button images)
-- **[3]**: add full eLabFTW support
+- **[3]**: speed up the decoding, it has not really gotten better with frontend decoding
 - **[2]**: improve folder structure/ refactoring (especially use full HTML5 capacities not only javascript and CSS)
 - **[2]**: add batch-scan possibility (**depends on user feedback, so this possible function will be re-evaluated after enduser-tests**)
+- **[2]**: if multiple samples are found for a code, allow only one of the samples to be linked into the text (**conceptual question if such a function should be allowed for sample tracking, as a code should only be used for one sample object; there might be scenarios where this makes sense, on the other hand a double use of a code indicates an error in the database; will be discussed after user feedback**)
 - **[2]**: package the extension to use it as regular extension
-- **[1]**: add button for switching cameras (for devices with front and back cameras, i.e. tablets or smartphones)
+- **[1]**: add full eLabFTW support
 
 ## pre-0.4 Roadmap/ TODO in no particular order ;) (Priority [1..5])
 
