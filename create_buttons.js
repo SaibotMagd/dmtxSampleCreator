@@ -4,17 +4,17 @@ overlay.setAttribute('id', 'overlay')
 overlay.style.position = 'absolute';
 overlay.style.top = '5%';
 overlay.style.left = '5%';
-overlay.style.width = '75%';
-overlay.style.height = '75%';
+overlay.style.width = '95%';
+overlay.style.height = '95%';
 overlay.style.backgroundColor = 'rgba(255, 255, 240, 0.5)';
 overlay.style.display = 'none';
 overlay.style.zIndex = '10000'
 document.body.appendChild(overlay);
 
 // video sizes
-let width = 800;
+let width = 600;
 console.log(width)
-let height = 600;
+let height = 400;
 
 var buttonFrame = document.createElement('div');
 overlay.appendChild(buttonFrame)
@@ -49,8 +49,8 @@ document.body.appendChild(div);
 
 var reader = document.createElement('div')
 reader.setAttribute('id', 'reader') 
-reader.width = width
-reader.height = height
+//reader.width = window.innerWidth
+//reader.height = window.innerHeight
 overlay.appendChild(reader);
 
 var insertButton = document.createElement('img');

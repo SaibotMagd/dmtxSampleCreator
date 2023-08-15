@@ -66,6 +66,8 @@ img:active {
   margin:auto;
   position:relative;    
   z-index: 100;
+  width:75%;
+  height:75%;
 }
 #reader .screen
 {
@@ -78,7 +80,7 @@ img:active {
 #reader .scan
 {
   width:100%;
-  height:5px;
+  height:1%;
   background: transparent;
   background-color:rgba(102, 255, 255, 0.5);
   position:absolute;
@@ -96,7 +98,13 @@ img:active {
     transform: translateY(0);
   }
   100% {
-    -webkit-transform: translateY(600px);
-    transform: translateY(600px);
+    -webkit-transform: translateY(10em);
+    transform: translateY(21em);
   }
+}
+
+#qr-shaded-region
+{
+  width: 100%;
+  height: 90%;
 }

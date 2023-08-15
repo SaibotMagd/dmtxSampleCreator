@@ -84,9 +84,9 @@ button.addEventListener("click", function() {
         overlay.style.display = "none"; 
       }
     }  
-    const config = {fps: 25, qrbox:{width:Math.round(600*0.75), height:Math.round(600*0.75)}}
+    const config = {fps: 25, qrbox:{width:window.innerHeight*0.2, height:window.innerHeight*0.1}}
     html5Qrcode.start({facingMode:"environment"}, config, qrCodeSucessCallback );                
-          
+    
     }    
     else {
       try {
