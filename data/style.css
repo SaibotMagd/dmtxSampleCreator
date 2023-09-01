@@ -16,9 +16,9 @@ img:active {
   padding: 5px;
 }
 #resultField {
-  position: relative;
+  position: absolute;
   margin-left: inherit;
-  top: 10%;
+  top: 15%;
   left: 2%;
   font-size: 1.5em;   
   width: 95%;
@@ -30,7 +30,7 @@ img:active {
   overflow-y: scroll;
 }
 #inputField {    
-  position: relative;
+  position: absolute;
   margin-left: inherit;
   top: 15%;
   left: 10%;
@@ -43,11 +43,11 @@ img:active {
 }
 
 #msgBoard {
-  position: relative;
+  position: absolute;
   margin-left: inherit;
   word-wrap: break-word;
-  top: 5%;
-  left: 5%;
+  top: 2%;
+  left: 7%;
   font-size: 30px;    
   width: 90%;
   height: 10%;
@@ -57,7 +57,7 @@ img:active {
 }    
 #buttonFrame {
   position: absolute;
-  top: 75%;
+  top: 80%;
   left: 40%;
   transform: translate(-50%, -50%);
 }
@@ -68,6 +68,9 @@ img:active {
   z-index: 100;
   width:75%;
   height:75%;
+  max-width: 800px;
+  max-height: 800px;
+  aspect-ratio: 1/1;
 }
 #reader .screen
 {
@@ -105,6 +108,23 @@ img:active {
 
 #qr-shaded-region
 {
-  width: 100%;
+  /*width: 100%;
   height: 90%;
+  border-width: 15em 20em;*/
+  aspect-ratio: 5 / 4;
+}
+
+/*video
+{
+  width:100%;
+  height:100%;
+}*/
+
+/*#qr-canvas
+{
+  border-width: 15em 20em;
+}*/
+
+* {
+  box-sizing: border-box;
 }

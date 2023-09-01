@@ -1,9 +1,10 @@
 // show additional button on website
 var overlay = document.createElement('div');
 overlay.setAttribute('id', 'overlay') 
-overlay.style.position = 'absolute';
-overlay.style.top = '5%';
-overlay.style.left = '5%';
+overlay.style.position = 'fixed';
+overlay.style.top = '1%';
+overlay.style.left = '1%';
+overlay.style.right = '1%';
 overlay.style.width = '95%';
 overlay.style.height = '95%';
 overlay.style.backgroundColor = 'rgba(255, 255, 240, 0.5)';
