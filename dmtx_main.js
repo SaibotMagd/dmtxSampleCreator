@@ -35,7 +35,7 @@ function createLink(linkValue, titleValue) {
   return a
 }
 
-function getActiveElement() {  
+function getActiveElement() {    
   if (document.activeElement.tagName != "IFRAME") {return}
   iframeDoc = document.activeElement.contentDocument;     
   let selection = iframeDoc.getSelection(); // read current cursor position inside iframe            
@@ -54,8 +54,58 @@ function getActiveElement() {
     savePos = start;        
     console.log('i clicked at: ' + start)
     console.log(activeElement)
+  
 }}
+
+function setHref(){
+  const panel = document.getElementsByClassName('attachmentPanel previewableAttachmentPanel')
+    for (let i = 0; i < 5; i++){
+      try {
+      let fileName = panel[i].childNodes[5].children[1].textContent
+      console.log(fileName)
+      if (fileName.length < 2){continue}
+      var link = getLink(fileName)
+      console.log(link)      
+      }
+        catch(error){continue}
+    // this part is just for the RDM-video
+    //for (let j = 0; j < 4; j++){
+        try {
+          const viewFrame = panel[i].childNodes[7].childNodes[3]      
+          let buttonClone = viewFrame.cloneNode(true); 
+          buttonClone.addEventListener("click", function() {
+            window.open(link)});
+          viewFrame.parentNode.replaceChild(buttonClone, viewFrame); 
+        }
+          catch(error){continue}
+        //console.log("i at least did something!")
+  //}
+
+}
+
+    // cut this part
+/*
+}
+function getLink(file){
+  switch (file){
+    case '2_subject_descriptives.xls':
+      return "https://cloud.gerbi-gmb.de/apps/onlyoffice/1043248?filePath=%2FDocuments%2Frdm_2024_video%2F2_subject_descriptives.xls"
+    case 'CCFv3_annotation_ITKSNAP_labels.txt':
+      return "https://cloud.gerbi-gmb.de/apps/files/?dir=/Documents/rdm_2024_video&openfile=1043251"
+    case 'CCFv3_annotation_OntologyColor_labels.txt':
+      return "https://cloud.gerbi-gmb.de/apps/files/?dir=/Documents/rdm_2024_video&openfile=1043254"
+    case 'gerbil_atlas_labels.xml':
+      return "https://cloud.gerbi-gmb.de/apps/files/?dir=/Documents/rdm_2024_video&openfile=1043308"
+    case 'gerbil_atlas_LUT.txt':
+      return "https://cloud.gerbi-gmb.de/apps/files/?dir=/Documents/rdm_2024_video&openfile=1043332"
+    case 'reworked_gerbil_itk_snap_label.txt':
+      return "https://cloud.gerbi-gmb.de/apps/files/?dir=/Documents/rdm_2024_video&openfile=1043362"
+    }*/
+}
+
+
 setInterval(getActiveElement, 1000); // call function every second
+setInterval(setHref, 2000);
 
 abortButton.addEventListener("click", function(){
   toggle_elements();
@@ -125,6 +175,7 @@ function sendToServer(decodedText, customName='') {
   xhrString = JSON.stringify(xhrString);
   console.log(xhrString)
   const xhr = new XMLHttpRequest();
+  //xhr.open('POST', 'https://cni-wiki.int.lin-magdeburg.de/dmx2rspace/upload', true);
   xhr.open('POST', 'http://127.0.0.1:5000/upload', true);            
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.send(xhrString);
@@ -172,7 +223,8 @@ function sendToServer(decodedText, customName='') {
           xhrString = get_xhrString(1, inputField.value, decodedText);
           xhrString = JSON.stringify(xhrString);
           const xhr = new XMLHttpRequest();
-          xhr.open('POST', 'http://127.0.0.1:5000/upload', true);            
+          //xhr.open('POST', 'https://cni-wiki.int.lin-magdeburg.de/dmx2rspace/upload', true);      
+          xhr.open('POST', 'http://127.0.0.1:5000/upload', true);      
           xhr.setRequestHeader('Content-Type', 'application/json');
           xhr.send(xhrString);
           xhr.onload = () => {

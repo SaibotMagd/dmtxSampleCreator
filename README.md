@@ -23,7 +23,7 @@
 
 - Python >= 3.10
 - Flask >= 2.2.2
-- Fask-Cors >= 3.0.10
+- Flask-Cors >= 3.0.10
 - requests >= 2.31.0
 
 ## configuration/ secret file
@@ -32,6 +32,12 @@
   [api_secrets.example](/data/secrets/api_secrets.example.json)
 
 ## version history
+
+### 0.5 
+- changed to the current state of the art manifest version 3
+- package the extension as .crx file (now runable without developer mode, e.g. allow for automatic distribution)
+- sucessfully tested on android 12 tablet, windows 10, windows 11 surface
+- implemented the flask backend as productive use server
 
 ### 0.4
 
@@ -78,22 +84,22 @@
 
 *List in no particular order ;) (Priority [1..5])*
 
-- **[5]**: prevent barcode entries from being deleted
+- **[5]**: add full eLabFTW support
+- **[5]**: improve the scanspeed (e.g. shearing correction, image improvements)
 - **[5]**: show an error texts if something unusal happen (especially a warning if the a user tried to add a link without being inside an iframe; connection issues)
-- **[5]**: create a final server structure to be used instead of "non SSL flask development server"
-- **[5]**: test the extension on the most likely end-user devices (modern android tablet, aged android smartphone, windows 11 ms surface; please do not ask for apple support, this will never exist, but could be blocked in the future for security reasons)
-- **[4]**: create a mode to search for samples anywhere not only inside a document
-- **[4]**: add more customizations (edit the link text, insert eLabFTW API calls)
+- **[4]**: add useability of physical barcodescanner devices
+- **[3]**: add more customizations (edit the link text, insert eLabFTW API calls)
+- **[3]**: prevent barcode entries from being deleted
 - **[3]**: add button for switching cameras (for devices with front and back cameras, i.e. tablets or smartphones)
 - **[3]**: improved comprehensibility of the interface (hover infos, more intuitve button images)
 - **[3]**: speed up the decoding, it has not really gotten better with frontend decoding
 - **[2]**: improve folder structure/ refactoring (especially use full HTML5 capacities not only javascript and CSS)
 - **[2]**: add batch-scan possibility (**depends on user feedback, so this possible function will be re-evaluated after enduser-tests**)
 - **[2]**: if multiple samples are found for a code, allow only one of the samples to be linked into the text (**conceptual question if such a function should be allowed for sample tracking, as a code should only be used for one sample object; there might be scenarios where this makes sense, on the other hand a double use of a code indicates an error in the database; will be discussed after user feedback**)
+- **[2]**: create a mode to search for samples anywhere not only inside a document
 - **[2]**: package the extension to use it as regular extension
-- **[1]**: add full eLabFTW support
 
-## pre-0.4 Roadmap/ TODO in no particular order ;) (Priority [1..5])
+## 0.4 Roadmap/ TODO in no particular order ;) (Priority [1..5])
 
 (TODO: create a mode to search for samples anywhere not only inside a document)
 

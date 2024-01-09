@@ -1,6 +1,6 @@
 {
-  "manifest_version": 3,
-  "version": "0.2",
+  "manifest_version": 2,
+  "version": "0.1",
   "name": "dmtx Sample Creator",
   "description": "read a Datamatrix Code from Camera or Scanner check if code already exist in rSpace Inventory then paste link to ELN.",
   "permissions": [
@@ -9,10 +9,13 @@
     "downloads",
     "unlimitedStorage"
    ],
-   "background": {    
-    "service_worker": "app.js/base.js"
+   "background": {
+    "persistent": false,
+    "scripts": [
+      "app.js/base.js"
+    ]
   },
-  "action": {},
+  "browser_action": {},
   "homepage_url": "https://lin-magdeburg.de",
   "icons": {
     "48": "data/icons/48.png",
