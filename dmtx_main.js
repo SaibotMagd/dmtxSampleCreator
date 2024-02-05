@@ -3,6 +3,10 @@ let activeElement; // global Variable
 let html5Qrcode;
 let iframeDoc;
 let savePos;
+// check if activate ELN = elabFTW 
+let elnType = 'rspace';
+if (document.getElementById('button').style.border.split("rgb")[1] === '(41, 174, 185)'){
+elnType = 'elabftw'; console.log("I'm ftw");}
 
 function pasteUrl(resPart, decodedText, iframeDoc) {  
   let range = null;
@@ -68,8 +72,6 @@ function setHref(){
       console.log(link)      
       }
         catch(error){continue}
-    // this part is just for the RDM-video
-    //for (let j = 0; j < 4; j++){
         try {
           const viewFrame = panel[i].childNodes[7].childNodes[3]      
           let buttonClone = viewFrame.cloneNode(true); 
@@ -77,30 +79,7 @@ function setHref(){
             window.open(link)});
           viewFrame.parentNode.replaceChild(buttonClone, viewFrame); 
         }
-          catch(error){continue}
-        //console.log("i at least did something!")
-  //}
-
-}
-
-    // cut this part
-/*
-}
-function getLink(file){
-  switch (file){
-    case '2_subject_descriptives.xls':
-      return "https://cloud.gerbi-gmb.de/apps/onlyoffice/1043248?filePath=%2FDocuments%2Frdm_2024_video%2F2_subject_descriptives.xls"
-    case 'CCFv3_annotation_ITKSNAP_labels.txt':
-      return "https://cloud.gerbi-gmb.de/apps/files/?dir=/Documents/rdm_2024_video&openfile=1043251"
-    case 'CCFv3_annotation_OntologyColor_labels.txt':
-      return "https://cloud.gerbi-gmb.de/apps/files/?dir=/Documents/rdm_2024_video&openfile=1043254"
-    case 'gerbil_atlas_labels.xml':
-      return "https://cloud.gerbi-gmb.de/apps/files/?dir=/Documents/rdm_2024_video&openfile=1043308"
-    case 'gerbil_atlas_LUT.txt':
-      return "https://cloud.gerbi-gmb.de/apps/files/?dir=/Documents/rdm_2024_video&openfile=1043332"
-    case 'reworked_gerbil_itk_snap_label.txt':
-      return "https://cloud.gerbi-gmb.de/apps/files/?dir=/Documents/rdm_2024_video&openfile=1043362"
-    }*/
+          catch(error){continue}}
 }
 
 
@@ -126,15 +105,13 @@ button.addEventListener("click", function() {
       // for easiert testing
       if(decodedText){
         console.log("decoded: " + decodedText);
-        //TODO: build a window to ask for a custom name
-        //
         html5Qrcode.stop();
         // send result to server            
         sendToServer(decodedText);          
         overlay.style.display = "none"; 
       }
     }  
-    const config = {fps: 25, qrbox:{width: window.innerHeight*0.2, height: window.innerHeight*0.2}}
+    const config = {fps: 50, qrbox:{width: window.innerHeight*0.2, height: window.innerHeight*0.2}}
     html5Qrcode.start({facingMode:"environment"}, config, qrCodeSucessCallback );                
     
     }    
@@ -148,6 +125,36 @@ button.addEventListener("click", function() {
   });
 
 function get_xhrString(newSample, customName, decodedText) {
+  if (elnType === 'elabftw') return build_elabftw_xhrString(newSample, customName, decodedText);
+  if (elnType === 'rspace') return build_rspace_xhrString(newSample, customName, decodedText);
+}
+
+function build_elabftw_xhrString(newSample, customName, decodedText){
+  // get document name
+  let docName = document.getElementById('title_input').value;
+  // get username
+  let userName = document.getElementById('import_modal_target')[document.getElementById('import_modal_target').length-1].text;
+  // as in elabftw the username is splitted in ["nickname familyname"] you need to add it together
+  userName = userName.replaceAll(" ", "_");
+  // get the uniqueId for the experiment where to insert the sample link
+  let uniqueId = document.querySelectorAll("a[title='View mode']")[0].href; 
+  if (uniqueId.length>0) {uniqueId[uniqueId.search("id="),uniqueId.length-1]}
+  // create a json to transfer per http
+  let xhrString = {
+                  'userName': userName,
+                  'docName': docName,
+                  'uniqueId': uniqueId,
+                  'decodedText': decodedText,
+                  'newSample': newSample,
+                  'elnName': 'elabftw'
+  }
+  // insert a customName for the newly created sample
+  if (customName != '') {xhrString['customName'] = customName}
+  console.log(xhrString);
+  return xhrString
+  }
+
+function build_rspace_xhrString(newSample, customName, decodedText){
   let docName = document.getElementById('recordNameInBreadcrumb').innerHTML;
   // scrap username from current page
   let userName = document.getElementById('witnessDocumentDialog').innerHTML;
@@ -162,13 +169,14 @@ function get_xhrString(newSample, customName, decodedText) {
                   'docName': docName,
                   'uniqueId': uniqueId,
                   'decodedText': decodedText,
-                  'newSample': newSample
+                  'newSample': newSample,
+                  'elnName': 'rspace'
   }
   // insert a customName for the newly created sample
   if (customName != '') {xhrString['customName'] = customName}
   console.log(xhrString);
   return xhrString
-}
+  }
 
 function sendToServer(decodedText, customName='') {
   let xhrString = get_xhrString(0, customName, decodedText);

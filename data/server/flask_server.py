@@ -31,15 +31,36 @@ def upload():
     ## create a dict consisting of the necessary infos from client
     if request_data['newSample'] == 1:    
         ## use the sampleParameter dict with docName, userName, barcode to create a new sample out of these infos
-        r = set_new_sample(request_data, elnName='rspace')                
+        r = set_new_sample(request_data)                
         sampleEntry = shape_result_dict({}, r, 1)           
     
     return sampleEntry
 
-def get_sample_data_from_barcode(sampleParameter, elnName='rspace'):
-    apiParams = get_secret_api_parameters()
+def get_sample_data_from_barcode(sampleParameter):
+    elnName = sampleParameter['elnName']
+    apiParams = get_secret_api_parameters(elnName)
     url = os.path.join(*[apiParams['apiUrl'], apiParams['apiInventoryPath'], apiParams['apiSearchFile']])
     headers = {"accept": "application/json", "apiKey": f"{apiParams['apiKey']}"}    
+    
+    ## create the search-json for searching in elabftw-database (~inventory)
+    if elnName == 'elabftw':
+        queryHeaders = ["datamatrix code: ", "Scanned Unknown: ", "Scanned QR Code: "]
+        insertDict = {}
+        for i, queryHead in enumerate(queryHeaders):
+            params = {"query": f"{queryHead}{sampleParameter['decodedText']}", "pageNumber": 0, "pageSize": 20, "orderBy": "name asc"}    
+            print(params)
+            ## send get call to server
+            r = requests.get(url, params=params, headers=headers, verify=False)    
+            r = r.json()    
+            ## build a dict consisting all samples with he particular barcode in database
+            insertDict = reshape_request(r, insertDict)            
+        ## if no sample have been found send a 0 back to client to initiate the "ask for create sample frame"
+        if insertDict == {}:
+            options = get_secret_api_parameters(type='options')
+            return {'0': options['defaultSampleNameOrder']}    
+        else: 
+            return insertDict
+    ## return the same dictionary no matter if a sample was newly created or successfully found (keys: ['globalId': ['created', 'createdBy', 'link', 'newlyCreated'])
     
     ## create the search-json for searching in rspace-inventory
     if elnName == 'rspace':
@@ -136,7 +157,7 @@ def set_new_sample(sampleParameter, secrets_source='', elnName='rspace'):
 ## load the secret infos about the API connection from api_secrets.json
 ## source: location of the api_secrets.json file
 ## type: ["rspace", "elabFTW", "options"]
-def get_secret_api_parameters(source='../secrets/api_secrets.json', type='rspace'):
+def get_secret_api_parameters(type='rspace', source='../secrets/api_secrets.json'):
     with open(source) as f:    
         data = json.load(f)
         return data[type][0]

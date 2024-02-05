@@ -1,13 +1,11 @@
 {
   "manifest_version": 3,
-  "version": "0.2",
+  "version": "0.6",
   "name": "dmtx Sample Creator",
   "description": "read a Datamatrix Code from Camera or Scanner check if code already exist in rSpace Inventory then paste link to ELN.",
   "permissions": [
     "storage",
-    "contextMenus",
-    "downloads",
-    "unlimitedStorage"
+    "contextMenus"    
    ],
    "background": {    
     "service_worker": "app.js/base.js"
@@ -20,7 +18,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*.lin-magdeburg.de/workspace/editor/structuredDocument*"],
+      "matches": ["*://*.lin-magdeburg.de/workspace/editor/structuredDocument*", "*://*/experiments.php?mode=edit*"],
       "js": ["create_buttons.js", "dmtx_main.js", "/data/qrScript.js"],
       "css": ["/data/style.css"]
     }

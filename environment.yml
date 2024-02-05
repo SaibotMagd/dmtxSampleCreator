@@ -1,16 +1,8 @@
-name: rspace
+name: dmtxSC
 channels:
   - conda-forge
   - defaults
 dependencies:
-  - _libgcc_mutex=0.1=main
-  - _openmp_mutex=5.1=1_gnu
-  - asttokens=2.2.1=pyhd8ed1ab_0
-  - backcall=0.2.0=pyh9f0ad1d_0
-  - backports=1.0=pyhd8ed1ab_3
-  - backports.functools_lru_cache=1.6.4=pyhd8ed1ab_0
-  - blas=1.1=openblas
-  - bzip2=1.0.8=h7b6447c_0
   - ca-certificates=2023.05.30=h06a4308_0
   - cairo=1.16.0=hb05425b_4
   - dbus=1.13.18=hb2f20db_0
@@ -155,4 +147,3 @@ dependencies:
       - soupsieve==2.4.1
       - urllib3==2.0.2
       - werkzeug==2.3.4
-prefix: /home/cni-adult/anaconda3/envs/rspace
