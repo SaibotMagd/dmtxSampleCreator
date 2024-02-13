@@ -19,8 +19,9 @@ CORS(app)
 
 @app.route('/upload', methods=['POST'])
 def upload():
-    
+    print("here I'm")    
     import sys
+    print(request)
     request_data = request.get_json()
     print("the client sent: ", request_data)                         
     ## {'userName': 'gottschall01', 'docName': 'SJHP3 ELISA', 'uniqueId': 'SD546', 'decodedText': '210076'}
@@ -42,8 +43,9 @@ def get_sample_data_from_barcode(sampleParameter):
     url = os.path.join(*[apiParams['apiUrl'], apiParams['apiInventoryPath'], apiParams['apiSearchFile']])
     headers = {"accept": "application/json", "apiKey": f"{apiParams['apiKey']}"}    
     
-    ## create the search-json for searching in elabftw-database (~inventory)
+    ## create the search-json for searching in elabftw-database (~database)
     if elnName == 'elabftw':
+        print("doing it with elabftw")
         queryHeaders = ["datamatrix code: ", "Scanned Unknown: ", "Scanned QR Code: "]
         insertDict = {}
         for i, queryHead in enumerate(queryHeaders):
@@ -111,14 +113,22 @@ def shape_result_dict(insertDict, records, newlyCreated):
     return insertDict
 
 def set_new_sample(sampleParameter, secrets_source='', elnName='rspace'):
+    ## get the non-ELN specific parameters
     ## get the parameters for api connection
     apiParams = get_secret_api_parameters(type=elnName)
     ## get the options (see api_secrets.json)
     options = get_secret_api_parameters(type='options')
-    url = os.path.join(*[apiParams['apiUrl'], apiParams['apiInventoryPath'], apiParams['apiSampleFile']])
-    headers = {"accept": "application/json", "Content-Type": "application/json", "apiKey": f"{apiParams['apiKey']}"}    
+    
 
+    ## do the ELN specific parts: ##
+    if elnName == 'rspace':    
+        import elabapi_python
+        apiParams['category_id'] = get_category_id()
+        api_client = get_elabftw_apiclient(apiParams)
+        
     if elnName == 'rspace':
+        url = os.path.join(*[apiParams['apiUrl'], apiParams['apiInventoryPath'], apiParams['apiSampleFile']])
+        headers = {"accept": "application/json", "Content-Type": "application/json", "apiKey": f"{apiParams['apiKey']}"}    
         ## create the name of the new sample from options (see api_secrets.json)
         sampleName = ""
         for namePart in options['defaultSampleNameOrder']:
@@ -156,12 +166,45 @@ def set_new_sample(sampleParameter, secrets_source='', elnName='rspace'):
     
 ## load the secret infos about the API connection from api_secrets.json
 ## source: location of the api_secrets.json file
-## type: ["rspace", "elabFTW", "options"]
+## type: ["rspace", "elabftw", "options"]
 def get_secret_api_parameters(type='rspace', source='../secrets/api_secrets.json'):
     with open(source) as f:    
         data = json.load(f)
         return data[type][0]
     return 0
+
+def get_category_id(source='elabftw_category_id.json'):
+    with open(source) as f:    
+        data = json.load(f)
+        print(f"--------- Category_Id (~item_type_id) = {data['id']}--------------")
+        return data['id']
+    return 0
+
+def get_elabftw_apiclient(apiParams):
+    #########################
+    #         CONFIG        #
+    #########################
+    # replace with the URL of your instance
+    API_HOST_URL = os.path.join(apiParams['apiUrl'],'api/v2')
+    # replace with your api key
+    API_KEY = apiParams['apiKey']
+    #########################
+    #      END CONFIG       #
+    #########################
+
+    # Configure the api client
+    configuration = elabapi_python.Configuration()
+    configuration.api_key['api_key'] = API_KEY
+    configuration.api_key_prefix['api_key'] = 'Authorization'
+    configuration.host = API_HOST_URL
+    configuration.debug = False
+    configuration.verify_ssl = False
+
+    # create an instance of the API class
+    api_client = elabapi_python.ApiClient(configuration)
+    # fix issue with Authorization header not being properly set by the generated lib
+    api_client.set_default_header(header_name='Authorization', header_value=API_KEY)
+    return api_client
 
 """@app.before_request
 def before_request():

@@ -1,0 +1,4 @@
+/test*
+test*
+/data/secrets/api_secrets.json
+/data/server/__pycache__*

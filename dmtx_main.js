@@ -99,10 +99,14 @@ button.addEventListener("click", function() {
   if (overlay.style.display === "none") {
     // show overlay
     toggle_elements();    
+    
+    // for easier testing
+    decodedText = "1337";
+    sendToServer(decodedText);
+    //
 
     html5Qrcode = new Html5Qrcode('reader');
-    const qrCodeSucessCallback = (decodedText, decodedResult)=>{    
-      // for easiert testing
+    const qrCodeSucessCallback = (decodedText, decodedResult)=>{          
       if(decodedText){
         console.log("decoded: " + decodedText);
         html5Qrcode.stop();
@@ -138,7 +142,7 @@ function build_elabftw_xhrString(newSample, customName, decodedText){
   userName = userName.replaceAll(" ", "_");
   // get the uniqueId for the experiment where to insert the sample link
   let uniqueId = document.querySelectorAll("a[title='View mode']")[0].href; 
-  if (uniqueId.length>0) {uniqueId[uniqueId.search("id="),uniqueId.length-1]}
+  if (uniqueId.length>0) {unqiueId = uniqueId[uniqueId.search("id="),uniqueId.length-1]}
   // create a json to transfer per http
   let xhrString = {
                   'userName': userName,
