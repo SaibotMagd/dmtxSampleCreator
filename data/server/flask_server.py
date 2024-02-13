@@ -45,24 +45,14 @@ def get_sample_data_from_barcode(sampleParameter):
     
     ## create the search-json for searching in elabftw-database (~database)
     if elnName == 'elabftw':
-        print("doing it with elabftw")
-        queryHeaders = ["datamatrix code: ", "Scanned Unknown: ", "Scanned QR Code: "]
-        insertDict = {}
-        for i, queryHead in enumerate(queryHeaders):
-            params = {"query": f"{queryHead}{sampleParameter['decodedText']}", "pageNumber": 0, "pageSize": 20, "orderBy": "name asc"}    
-            print(params)
-            ## send get call to server
-            r = requests.get(url, params=params, headers=headers, verify=False)    
-            r = r.json()    
-            ## build a dict consisting all samples with he particular barcode in database
-            insertDict = reshape_request(r, insertDict)            
-        ## if no sample have been found send a 0 back to client to initiate the "ask for create sample frame"
-        if insertDict == {}:
-            options = get_secret_api_parameters(type='options')
-            return {'0': options['defaultSampleNameOrder']}    
-        else: 
-            return insertDict
-    ## return the same dictionary no matter if a sample was newly created or successfully found (keys: ['globalId': ['created', 'createdBy', 'link', 'newlyCreated'])
+        print("--> Doing it with elabftw! <---")
+        api_client = get_elabftw_apiclient(apiParams)
+        itemsApi = elabapi_python.ItemsApi(api_client)
+        response = itemsApi.read_items()
+        for r in response:
+            if r.metadata == None: continue
+            if r.metadata.rfind('"datamatrix_code": {"type": "text", "value": "1337",')) != -1:
+                insertDict = reshape_request(r.to_dict(), apiParams, elnName)
     
     ## create the search-json for searching in rspace-inventory
     if elnName == 'rspace':
@@ -75,41 +65,58 @@ def get_sample_data_from_barcode(sampleParameter):
             r = requests.get(url, params=params, headers=headers, verify=False)    
             r = r.json()    
             ## build a dict consisting all samples with he particular barcode in database
-            insertDict = reshape_request(r, insertDict)            
-        ## if no sample have been found send a 0 back to client to initiate the "ask for create sample frame"
-        if insertDict == {}:
-            options = get_secret_api_parameters(type='options')
-            return {'0': options['defaultSampleNameOrder']}    
-        else: 
-            return insertDict
-    ## return the same dictionary no matter if a sample was newly created or successfully found (keys: ['globalId': ['created', 'createdBy', 'link', 'newlyCreated'])
+            insertDict = reshape_request(r, insertDict, elnName)            
+        
+    ## if no sample have been found send a 0 back to client to initiate the "ask for create sample frame" (sent the custom order of sample name back to the client; from secret.json file)
+    ## return the same dictionary no matter if a sample was newly created or successfully found (see dict in shape_result_dict()
+    if insertDict == {}:
+        options = get_secret_api_parameters(type='options')
+        return {'0': options['defaultSampleNameOrder']}    
+    else: 
+        return insertDict
+
 
 ## select if 
-def reshape_request(r, insertDict):  
-
+def reshape_request(r, insertDict, elnName="rspace"):  
+    if elnName == 'elabftw':
+        ## take the url from apiParams to create the link to the item
+        link = os.path.join(insertDict['apiUrl'], 
+        insertDict = {}
+        insertDict = shape_result_dict(insertDict, r, 0, elnName) 
+    if elnName == 'rspace':
     ## shape the resulted sample entry to decrease the data to be send to the client
     # should return the last record found with the particular dmtx number
-    if r['totalHits'] > 0:
-        for records in r["records"]:   
-            print("I found an prior entry: ", records.keys()) 
-            insertDict = shape_result_dict(insertDict, records, 0)                
+        if r['totalHits'] > 0:
+            for records in r["records"]:   
+                print("I found an prior entry: ", records.keys()) 
+                insertDict = shape_result_dict(insertDict, records, 0, elnName)                
     return insertDict    
 
 
-def shape_result_dict(insertDict, records, newlyCreated):
-    ## create a small dict out of the whole sample result json
-    # shape the link by delete the ["api","v1"] (& the "s" from sample) parts out of it, as the search/create json lacks the correct link 
-    # (i.e. link provided by json: 'https://rstest.int.lin-magdeburg.de/api/inventory/v1/samples/98322' transformed to: 'https://rstest.int.lin-magdeburg.de/inventory/sample/98322')
-    link = records["_links"][0]["link"]
-    link = '/'.join(link.split('/')[:3] + ['inventory'] +['sample', str(records["id"])])
-    insertDict.update({f"{records['globalId']}": [{
-                            "name": records["name"],
-                            "created": records["created"],
-                            "createdBy": records["createdBy"],
-                            "link": link,
-                            "newlyCreated" : newlyCreated
-                            }]
-                    })
+def shape_result_dict(insertDict, records, newlyCreated, elnName="rspace"):
+    if elnName == 'elabftw':
+        insertDict.update({f"{records['id']}": [{
+                        "name": records["name"],
+                        "created": records["created"],
+                        "createdBy": records["createdBy"],
+                        "link": link,
+                        "newlyCreated" : newlyCreated
+                        }]
+                })
+    if elnName == 'rspace':
+        ## create a small dict out of the whole sample result json
+        # shape the link by delete the ["api","v1"] (& the "s" from sample) parts out of it, as the search/create json lacks the correct link 
+        # (i.e. link provided by json: 'https://rstest.int.lin-magdeburg.de/api/inventory/v1/samples/98322' transformed to: 'https://rstest.int.lin-magdeburg.de/inventory/sample/98322')
+        link = records["_links"][0]["link"]
+        link = '/'.join(link.split('/')[:3] + ['inventory'] +['sample', str(records["id"])])
+        insertDict.update({f"{records['globalId']}": [{
+                                "name": records["name"],
+                                "created": records["created"],
+                                "createdBy": records["createdBy"],
+                                "link": link,
+                                "newlyCreated" : newlyCreated
+                                }]
+                        })
     return insertDict
 
 def set_new_sample(sampleParameter, secrets_source='', elnName='rspace'):

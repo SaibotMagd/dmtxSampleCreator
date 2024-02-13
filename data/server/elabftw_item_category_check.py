@@ -53,13 +53,21 @@ def post_dmtx_category(api_client): #aka item_type in elabftw
     # print(f'The newly created resource category is here: {locationHeaderInResponse}')
     itemId = int(locationHeaderInResponse.split('=').pop())
     # now change the title, and body and color
-    body = {'body': 'Use this category to save datamatrix_codes', 'color': '#f90f0f', \
+    """body = {'body': 'Use this category to save datamatrix_codes', 'color': '#f90f0f', \
     'metadata':  '{"extra_fields":{ \
     "username":{"type":"text","value":"saibotmagd","group_id":null,"required":true}, \
     "create_time":{"type":"text","1/6/2024 13:37":"","group_id":null,"required":true}, \
     "experiment_id":{"type":"text","2":"","group_id":null,"required":true}, \
     "datamatrix_code":{"type":"text","1337":"","group_id":null,"required":true,"description":"datamatrix code: "}, \
     "experiment_name":{"type":"text","I insert a sample tracking link":"","group_id":null,"required":true}}}', \
+     'title': 'sample_tracking_real'}"""
+    body = {'body': 'Use this category to save datamatrix_codes', 'color': '#f90f0f', \
+    'metadata':  '{"extra_fields":{ \
+    "username":{"type":"text","group_id":null,"required":true}, \
+    "create_time":{"type":"text","group_id":null,"required":true}, \
+    "experiment_id":{"type":"text","group_id":null,"required":true}, \
+    "datamatrix_code":{"type":"text","group_id":null,"required":true,"description":"datamatrix code: "}, \
+    "experiment_name":{"type":"text","group_id":null,"required":true}}}', \
      'title': 'sample_tracking_real'}
     response = itemsTypesApi.patch_items_type(itemId, body=body)
     print("I just created the category: ", response)

@@ -1,5 +1,5 @@
 {
-    "id": 15,
+    "id": 2,
     "title": "sample_tracking_real",
     "status": null,
     "color": "f90f0f",
@@ -7,5 +7,5 @@
     "ordering": null,
     "canread": "{\"base\": 30, \"teams\": [], \"users\": [], \"teamgroups\": []}",
     "canwrite": "{\"base\": 30, \"teams\": [], \"users\": [], \"teamgroups\": []}",
-    "metadata": "{\"extra_fields\": {\"username\": {\"type\": \"text\", \"value\": \"saibotmagd\", \"group_id\": null, \"required\": true}, \"create_time\": {\"type\": \"text\", \"group_id\": null, \"required\": true, \"1/6/2024 13:37\": \"\"}, \"experiment_id\": {\"2\": \"\", \"type\": \"text\", \"group_id\": null, \"required\": true}, \"datamatrix_code\": {\"1337\": \"\", \"type\": \"text\", \"group_id\": null, \"required\": true, \"description\": \"datamatrix code: \"}, \"experiment_name\": {\"type\": \"text\", \"group_id\": null, \"required\": true, \"I insert a sample tracking link\": \"\"}}}"
+    "metadata": "{\"extra_fields\": {\"username\": {\"type\": \"text\", \"group_id\": null, \"required\": true}, \"create_time\": {\"type\": \"text\", \"group_id\": null, \"required\": true}, \"experiment_id\": {\"type\": \"text\", \"group_id\": null, \"required\": true}, \"datamatrix_code\": {\"type\": \"text\", \"group_id\": null, \"required\": true, \"description\": \"datamatrix code: \"}, \"experiment_name\": {\"type\": \"text\", \"group_id\": null, \"required\": true}}}"
 }
