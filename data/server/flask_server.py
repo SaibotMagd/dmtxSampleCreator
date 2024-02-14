@@ -9,6 +9,7 @@ import numpy as np
 import base64
 import json
 import ssl
+import elabapi_python
 #context = ssl.SSLContext(ssl.PROTOCOL_TLS)
 #context.load_cert_chain('127.0.0.1.pem', '127.0.0.1-key.pem')
 
@@ -24,16 +25,18 @@ def upload():
     print(request)
     request_data = request.get_json()
     print("the client sent: ", request_data)                         
-    ## {'userName': 'gottschall01', 'docName': 'SJHP3 ELISA', 'uniqueId': 'SD546', 'decodedText': '210076'}
+    ## {'userName': 'saibot_magd', 'docName': 'Untitled', 'uniqueId': '1', 'decodedText': '1337', 'newSample': 1, 'elnName': 'elabftw', 'customName': '1337_Untitled_1_saibot_magd_2024-1-3 10:57:49'}
 
     if request_data['newSample'] == 0:
         sampleEntry = get_sample_data_from_barcode(request_data)
+        return sampleEntry
 
     ## create a dict consisting of the necessary infos from client
     if request_data['newSample'] == 1:    
         ## use the sampleParameter dict with docName, userName, barcode to create a new sample out of these infos
-        r = set_new_sample(request_data)                
-        sampleEntry = shape_result_dict({}, r, 1)           
+        r = set_new_sample(request_data, '', request_data['elnName'])                
+        #sampleEntry = shape_result_dict({}, r, 1, elnName)           
+        sampleEntry = r
     
     return sampleEntry
 
@@ -49,9 +52,18 @@ def get_sample_data_from_barcode(sampleParameter):
         api_client = get_elabftw_apiclient(apiParams)
         itemsApi = elabapi_python.ItemsApi(api_client)
         response = itemsApi.read_items()
+        insertDict = {}
         for r in response:
-            if r.metadata == None: continue
-            if r.metadata.rfind('"datamatrix_code": {"type": "text", "value": "1337",')) != -1:
+            if r.metadata == None: continue            
+            """
+            #if r.category != get_category_id(): continue
+            print('"datamatrix_code": {"type": "text", "value": ' + '"' + sampleParameter['decodedText'] + '"')
+            #"datamatrix": {"type": "text", "value": "1337"},
+            print(r)
+            print("----------------------")
+            """
+            if r.metadata.rfind('"datamatrix_code": {"type": "text", "value": ' + '"' + sampleParameter['decodedText'] + '"') != -1:
+                print("--> I found something:" , r)
                 insertDict = reshape_request(r.to_dict(), apiParams, elnName)
     
     ## create the search-json for searching in rspace-inventory
@@ -80,29 +92,51 @@ def get_sample_data_from_barcode(sampleParameter):
 def reshape_request(r, insertDict, elnName="rspace"):  
     if elnName == 'elabftw':
         ## take the url from apiParams to create the link to the item
-        link = os.path.join(insertDict['apiUrl'], 
-        insertDict = {}
-        insertDict = shape_result_dict(insertDict, r, 0, elnName) 
+        #link = os.path.join(insertDict['apiUrl'], insertDict['apiInventoryPath'] + "id=" + str(r['id']))
+        insertDict = shape_result_dict(r, insertDict, 0, elnName) 
     if elnName == 'rspace':
     ## shape the resulted sample entry to decrease the data to be send to the client
     # should return the last record found with the particular dmtx number
         if r['totalHits'] > 0:
             for records in r["records"]:   
                 print("I found an prior entry: ", records.keys()) 
-                insertDict = shape_result_dict(insertDict, records, 0, elnName)                
+                insertDict = shape_result_dict(records, insertDict, 0, elnName)                
     return insertDict    
 
-
-def shape_result_dict(insertDict, records, newlyCreated, elnName="rspace"):
+def shape_result_dict(records, insertDict, newlyCreated, elnName="rspace"):
     if elnName == 'elabftw':
-        insertDict.update({f"{records['id']}": [{
-                        "name": records["name"],
-                        "created": records["created"],
-                        "createdBy": records["createdBy"],
+        """
+        if newlyCreated == 0:
+            insertDict.update({f"{records['id']}": [{
+                            "name": records["name"],
+                            "created": records["created"],
+                            "createdBy": records["createdBy"],
+                            "link": link,
+                            "newlyCreated" : newlyCreated
+                            }]
+                    })
+        if newlyCreated == 1:
+        """
+        import ast
+        itemId = records['id']
+        name = records['title']        
+        print(insertDict)        
+        link = os.path.join(insertDict['apiUrl'], insertDict['apiInventoryPath'] + "id=" + str(itemId))
+        records = records['metadata']
+        records = records.replace("null", "None")
+        records = records.replace("true", "True")        
+        print(records)
+        records = ast.literal_eval(records)
+        insertDict = {}
+        insertDict.update({f"{itemId}": [{
+                        "name": name,
+                        "created": records['extra_fields']['username']['value'],
+                        "createdBy": records['extra_fields']['create_time']['value'],
                         "link": link,
                         "newlyCreated" : newlyCreated
                         }]
                 })
+        return insertDict                         
     if elnName == 'rspace':
         ## create a small dict out of the whole sample result json
         # shape the link by delete the ["api","v1"] (& the "s" from sample) parts out of it, as the search/create json lacks the correct link 
@@ -126,13 +160,48 @@ def set_new_sample(sampleParameter, secrets_source='', elnName='rspace'):
     ## get the options (see api_secrets.json)
     options = get_secret_api_parameters(type='options')
     
-
     ## do the ELN specific parts: ##
-    if elnName == 'rspace':    
-        import elabapi_python
+    if elnName == 'elabftw':    
         apiParams['category_id'] = get_category_id()
+        print("--> sampleParameter: <---")
+        print(sampleParameter)
+        print("--> apiParameter: <---")
+        print(apiParams)
         api_client = get_elabftw_apiclient(apiParams)
-        
+        itemsApi = elabapi_python.ItemsApi(api_client)
+        # create a "placeholder" item
+        response = itemsApi.post_item_with_http_info(body={'category_id': apiParams['category_id'], 'tags': []})
+        # the previous request gives us the ID of the newly created item, so look into the Location header to get it
+        locationHeaderInResponse = response[2].get('Location')
+        itemId = int(locationHeaderInResponse.split('/').pop())
+        print(f'The newly created item is here: {itemId}')
+        ## send data to create/ patch item in database
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
+        sampleName = "_".join([sampleParameter['uniqueId'], sampleParameter['userName'], "_".join(timestamp.split(" "))])
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S") 
+        base_json = {}
+        base_json['extra_fields'] = {}
+        base_json['extra_fields']['username'] = {}
+        base_json['extra_fields']['create_time'] = {}
+        base_json['extra_fields']['experiment_id'] = {}
+        base_json['extra_fields']['datamatrix'] = {}
+        base_json['extra_fields']['experiment_name'] = {}
+        base_json['extra_fields']['username']['type'] = "text"
+        base_json['extra_fields']['username']['value'] = sampleParameter['userName']      
+        base_json['extra_fields']['create_time']['type'] = "text"
+        base_json['extra_fields']['create_time']['value'] = timestamp
+        base_json['extra_fields']['experiment_id']['type'] = "text"
+        base_json['extra_fields']['experiment_id']['value'] = sampleParameter['uniqueId']
+        base_json['extra_fields']['datamatrix']['type'] = "text"        
+        base_json['extra_fields']['datamatrix']['value'] = sampleParameter['decodedText']
+        base_json['extra_fields']['experiment_name']['type'] = "text"
+        base_json['extra_fields']['experiment_name']['value'] = sampleParameter['docName']      
+        # get the patched item
+        r = itemsApi.patch_item(itemId, body={'title': sampleName, 'body': '', 'metadata': json.dumps(base_json)})
+        r = shape_result_dict(r.to_dict(), apiParams, 1, elnName="elabftw")
+        return r
+                
+######################################                
     if elnName == 'rspace':
         url = os.path.join(*[apiParams['apiUrl'], apiParams['apiInventoryPath'], apiParams['apiSampleFile']])
         headers = {"accept": "application/json", "Content-Type": "application/json", "apiKey": f"{apiParams['apiKey']}"}    
@@ -158,17 +227,17 @@ def set_new_sample(sampleParameter, secrets_source='', elnName='rspace'):
                     "extraFields": [{ "name": "defaultELNconnection", "type": "text", "content" : sampleName}]
                 }
                                           
-    ## if a custom sample name is provided, overwrite the sampleName (the default Name will still be saved as extraField: defaultELNconnection for consistency)
-    if 'customName' in sampleParameter:
-        params['name'] = sampleParameter['customName']
-    ## if a template Id is provided, create a sample depending on this template (i.e. 65540 as special sample template)
-    if 'templateId' in sampleParameter:
-        params['templateId'] = sampleParameter['templateId']
-    ## send the create sample call to server    
-    r = requests.post(url, headers=headers, verify=False, data=json.dumps(params))
-    ## transform the response to json to get the sample entry    
-    r = r.json()
-    return r
+        ## if a custom sample name is provided, overwrite the sampleName (the default Name will still be saved as extraField: defaultELNconnection for consistency)
+        if 'customName' in sampleParameter:
+            params['name'] = sampleParameter['customName']
+        ## if a template Id is provided, create a sample depending on this template (i.e. 65540 as special sample template)
+        if 'templateId' in sampleParameter:
+            params['templateId'] = sampleParameter['templateId']
+        ## send the create sample call to server    
+        r = requests.post(url, headers=headers, verify=False, data=json.dumps(params))
+        ## transform the response to json to get the sample entry    
+        r = r.json()
+        return r
 
     
 ## load the secret infos about the API connection from api_secrets.json

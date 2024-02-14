@@ -33,6 +33,14 @@
 
 ## version history
 
+### 0.6
+- first working version for elabftw but with some drawbacks:
+1. you need to set a category to save the sample codes into the database; you can automate this by running: elabftw_item_category_check.py -> it creates the necessary category and write mandatory category_id into a json file: elabftw_category_id.json so the sample creator can find it
+2. you need the "elabftw_python" package -> "pip install elabftw_python"
+3. it only works if elabftw uses the "hypernext" version, not a final version like 4.9.0 because of browser camera policy
+4. you have to click on a position where to set the link to the item in the tinyMCE text window of the experiment
+5. largest drawback: as the elabftw api doesn't provide a "search for content" function; I had to get all items every created and search for the code in all of the items; in the medium term, this will lead to the search time increasing more and more until it leads to a timeout. i will try to find out the exact time so that the database can possibly be cleaned beforehand. if no better api database access can be made possible, it will probably be indispensable to access the database directly, which represents a major security risk.
+
 ### 0.5 
 - changed to the current state of the art manifest version 3
 - package the extension as .crx file (now runable without developer mode, e.g. allow for automatic distribution)

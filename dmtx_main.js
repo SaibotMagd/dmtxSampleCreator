@@ -1,12 +1,15 @@
 //let context = canvas.getContext('2d');
+
 let activeElement; // global Variable
 let html5Qrcode;
 let iframeDoc;
 let savePos;
 // check if activate ELN = elabFTW 
 let elnType = 'rspace';
+let serverUrl = 'http://127.0.0.1:5000/upload'
 if (document.getElementById('button').style.border.split("rgb")[1] === '(41, 174, 185)'){
-elnType = 'elabftw'; console.log("I'm ftw");}
+elnType = 'elabftw'; 
+console.log("I'm ftw");}
 
 function pasteUrl(resPart, decodedText, iframeDoc) {  
   let range = null;
@@ -142,7 +145,7 @@ function build_elabftw_xhrString(newSample, customName, decodedText){
   userName = userName.replaceAll(" ", "_");
   // get the uniqueId for the experiment where to insert the sample link
   let uniqueId = document.querySelectorAll("a[title='View mode']")[0].href; 
-  if (uniqueId.length>0) {unqiueId = uniqueId[uniqueId.search("id="),uniqueId.length-1]}
+  if (uniqueId.length>0) {uniqueId = uniqueId[uniqueId.search("id="),uniqueId.length-1]}
   // create a json to transfer per http
   let xhrString = {
                   'userName': userName,
@@ -154,7 +157,7 @@ function build_elabftw_xhrString(newSample, customName, decodedText){
   }
   // insert a customName for the newly created sample
   if (customName != '') {xhrString['customName'] = customName}
-  console.log(xhrString);
+  console.log("send to server: ", xhrString);
   return xhrString
   }
 
@@ -188,12 +191,13 @@ function sendToServer(decodedText, customName='') {
   console.log(xhrString)
   const xhr = new XMLHttpRequest();
   //xhr.open('POST', 'https://cni-wiki.int.lin-magdeburg.de/dmx2rspace/upload', true);
-  xhr.open('POST', 'http://127.0.0.1:5000/upload', true);            
+  xhr.open('POST', serverUrl, true);            
   xhr.setRequestHeader('Content-Type', 'application/json');
   xhr.send(xhrString);
   xhr.onload = () => {
     xhr.onload = null;
     if (xhr.readyState === 4 && xhr.status === 200) {
+      console.log("--> OG i got from server: " + xhr.responseText);
       let response = JSON.parse(xhr.responseText)
       if (Object.keys(response)[0] != '0') {                
         toggle_elements(0); //new sample = 0 i.e. something found so no "new sample" necessary
@@ -207,7 +211,8 @@ function sendToServer(decodedText, customName='') {
         res = JSON.stringify(res, null, 4);        
         resultField.innerHTML = res.replace(/,/g, ",<br />");
         resultField.contentEditable = "false";
-        msgBoard.value = `${decodedText} was found in the rspace inventory `
+        // create a message for sucessful found sample
+        msgBoard.value = getUserMsg(decodedText, 1, elnType)
         // create the event for insertButton to insert the sample entries found for the decodedText
         let insertButton = document.getElementById("insertButton")
         insertButton.addEventListener("click", function() {  
@@ -223,7 +228,8 @@ function sendToServer(decodedText, customName='') {
       }
       if (Object.keys(response)[0] == '0') {
         toggle_elements(1); //new sample = 1 i.e. nothing found create a new sample
-        msgBoard.value = `${decodedText} is NOT in the rspace inventory, <br> insert name for the sample or use the default (example in grey)`
+        // get msg to print for unsucessful search for code in database
+        msgBoard.value = getUserMsg(decodedText, 0, elnType)
         let inputField = document.getElementById("inputField")        
         let inputValue = get_defaultSampleName(JSON.parse(xhrString), response['0']);
         console.log("inputValue: " + inputValue)
@@ -236,7 +242,7 @@ function sendToServer(decodedText, customName='') {
           xhrString = JSON.stringify(xhrString);
           const xhr = new XMLHttpRequest();
           //xhr.open('POST', 'https://cni-wiki.int.lin-magdeburg.de/dmx2rspace/upload', true);      
-          xhr.open('POST', 'http://127.0.0.1:5000/upload', true);      
+          xhr.open('POST', serverUrl, true);      
           xhr.setRequestHeader('Content-Type', 'application/json');
           xhr.send(xhrString);
           xhr.onload = () => {
@@ -295,38 +301,6 @@ function get_pasteString(response, decodedText){
   }
   return linkText;
 }
-
-/*
-function pasteUrl(response, decodedText, iframeDoc) {  
-  let linkText = get_pasteString(response, decodedText); 
-  console.log(linkText) 
-  let iframeBody = iframeDoc.body; // select body-Element of iframe-document  
-          
-  console.log("activeElement post-content: " + ` ${activeElement} `)
-  let selection = iframeDoc.getSelection(); // read current cursor position inside iframe          
-  
-  //console.log(selection)
-  let range = selection.getRangeAt(0);
-  let start = range.startOffset;
-  
-  // take one of 2 possible sources for data inside the element (with one is filled depends on the element class)
-  let ogText = selection.anchorNode.textContent;                    
-  if (!(typeof ogText === "string" || ogText instanceof String)) {
-    ogText = selection.anchorNode.innerHTML;                    
-    //console.log("took from innerText:", ogText)
-  }
-  console.log("og-text: " + ogText)
-  console.log("start: " + start)
-  // cut the prior text in iframe element to insert the link between it
-  // outerHTML = activeElement.outerHTML
-  // activeElement = document.activeElement.setHTML(outerHTML)
-  console.log(selection);
-  selection.anchorNode.parentElement.setHTML(ogText.slice(0,start) + linkText + ogText.slice(start));
-  // hit a keypress afterwords because the rspace page doesn't recognize the change of innerHTML
-  // the keypress force the rspace page to save the change in innerHTML
-  let keyboardEvent = new KeyboardEvent("keypress", {key: "U"});        
-  iframeBody.dispatchEvent(keyboardEvent);     
-}*/
 
 // choose the element to observe
 const targetNode = document.getElementById('reader');
@@ -411,4 +385,16 @@ function makeLinksClickable(json) {
   }
   return result;
 }
-
+// create the message to be shown after searching the sample in inventory or database
+function getUserMsg(decodedText, found, elnType) {
+        if (elnType == 'elabftw') {
+            if (found) {
+        return `${decodedText} was found in the elabftw database `}
+        return `${decodedText} is NOT in elabftw database, insert a name for the sample or use the default`
+        }
+        if (elnType == 'rspace') {
+                if (found) {
+        return `${decodedText} was found in the rspace inventory `}
+        return `${decodedText} is NOT in rspace inventory, insert a name for the sample or use the default`
+        }
+}
