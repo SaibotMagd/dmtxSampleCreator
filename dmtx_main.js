@@ -5,19 +5,28 @@ let html5Qrcode;
 let iframeDoc;
 let savePos;
 // check if activate ELN = elabFTW 
-let elnType = 'rspace';
+let elnType = 'rspace'; 
 let serverUrl = 'http://127.0.0.1:5000/upload'
-if (document.getElementById('button').style.border.split("rgb")[1] === '(41, 174, 185)'){
-elnType = 'elabftw'; 
-console.log("I'm ftw");}
-
+try {
+    if (document.getElementById('button').style.border.split("rgb")[1] === '(41, 174, 185)'){
+    elnType = 'elabftw'; 
+    console.log("I'm ftw");}
+} catch(error){
+    console.log("I'm in rspace!")
+}
 function pasteUrl(resPart, decodedText, iframeDoc) {  
   let range = null;
   let pasteNode = null;  
 
   function insert_node(iframeDoc, pasteNode) {    
+    try {
     range = iframeDoc.getSelection().getRangeAt(0);            
     range.insertNode(pasteNode);
+    }
+    catch(e) {
+      console.log("auto-iframe-search found: ", iframeDoc)
+      iframeDoc.insertAdjacentHTML("beforeBegin", pasteNode)
+    }
   }  
 
   function get_pasteNode(resPart, decodedText){
@@ -29,7 +38,10 @@ function pasteUrl(resPart, decodedText, iframeDoc) {
   insert_node(iframeDoc, pasteNode);
   // the keypress force the rspace page to save the change in innerHTML
   let keyboardEvent = new KeyboardEvent("keypress", {key: "U"});        
+  try {
   iframeDoc.body.dispatchEvent(keyboardEvent);
+  }
+  catch(e) {console.log("no dispatch event")}
 }
 
 // create a link string
@@ -43,7 +55,12 @@ function createLink(linkValue, titleValue) {
 }
 
 function getActiveElement() {    
-  if (document.activeElement.tagName != "IFRAME") {return}
+  if (document.activeElement.tagName != "IFRAME") {
+    console.log("I search for iframe1!")
+    activeElement = document.getElementById("body_area_ifr").contentDocument.getElementById("tinymce");
+    iframeDoc = activeElement.children[0];
+    let start = 0;
+    return}
   iframeDoc = document.activeElement.contentDocument;     
   let selection = iframeDoc.getSelection(); // read current cursor position inside iframe            
   //console.log(selection)
@@ -52,7 +69,7 @@ function getActiveElement() {
   
   if (!activeElement) {
     activeElement = document.activeElement;
-
+    return
   }    
   
     if (document.activeElement.tagName == "IFRAME" && start != savePos) {  
@@ -64,30 +81,7 @@ function getActiveElement() {
   
 }}
 
-function setHref(){
-  const panel = document.getElementsByClassName('attachmentPanel previewableAttachmentPanel')
-    for (let i = 0; i < 5; i++){
-      try {
-      let fileName = panel[i].childNodes[5].children[1].textContent
-      console.log(fileName)
-      if (fileName.length < 2){continue}
-      var link = getLink(fileName)
-      console.log(link)      
-      }
-        catch(error){continue}
-        try {
-          const viewFrame = panel[i].childNodes[7].childNodes[3]      
-          let buttonClone = viewFrame.cloneNode(true); 
-          buttonClone.addEventListener("click", function() {
-            window.open(link)});
-          viewFrame.parentNode.replaceChild(buttonClone, viewFrame); 
-        }
-          catch(error){continue}}
-}
-
-
 setInterval(getActiveElement, 1000); // call function every second
-setInterval(setHref, 2000);
 
 abortButton.addEventListener("click", function(){
   toggle_elements();
@@ -104,7 +98,7 @@ button.addEventListener("click", function() {
     toggle_elements();    
     
     // for easier testing
-    decodedText = "1337";
+    decodedText = "13370";
     sendToServer(decodedText);
     //
 
@@ -212,7 +206,8 @@ function sendToServer(decodedText, customName='') {
         resultField.innerHTML = res.replace(/,/g, ",<br />");
         resultField.contentEditable = "false";
         // create a message for sucessful found sample
-        msgBoard.value = getUserMsg(decodedText, 1, elnType)
+        //msgBoard.value = getUserMsg(decodedText, 1, elnType)
+        msgBoard.textContent = getUserMsg(decodedText, 1, elnType)
         // create the event for insertButton to insert the sample entries found for the decodedText
         let insertButton = document.getElementById("insertButton")
         insertButton.addEventListener("click", function() {  
@@ -229,7 +224,8 @@ function sendToServer(decodedText, customName='') {
       if (Object.keys(response)[0] == '0') {
         toggle_elements(1); //new sample = 1 i.e. nothing found create a new sample
         // get msg to print for unsucessful search for code in database
-        msgBoard.value = getUserMsg(decodedText, 0, elnType)
+        // msgBoard.value = getUserMsg(decodedText, 0, elnType)
+        msgBoard.textContent = getUserMsg(decodedText, 0, elnType)
         let inputField = document.getElementById("inputField")        
         let inputValue = get_defaultSampleName(JSON.parse(xhrString), response['0']);
         console.log("inputValue: " + inputValue)
@@ -340,7 +336,6 @@ function toggle_elements(newSample='') {
     insertButton.style.display = "none";
     abortButton.style.display = "none";
     resultField.style.display = "none";  
-    msgBoard.style.display = "none";    
   } 
   overlay.style.display = "block";
   
@@ -353,8 +348,8 @@ function toggle_elements(newSample='') {
     abortButton.style.display = "block";  
 
     if (newSample == 1) {
-      msgBoard.style.background = "rgb(230, 176, 60)"
-      msgBoard.style.border = "5px solid rgb(230, 176, 60)";      
+      msgBoard.style.background = "rgb(255, 255, 0)"
+      msgBoard.style.border = "5px solid rgb(255, 255, 0)";      
       inputField.value = "placeholder"
       inputField.style.visibility = "visible";  
       inputField.style.display = "block";     

@@ -43,10 +43,13 @@ button.style.width = '60px';
 button.style.heigth = '60px';
 button.style.zIndex = '10000';
 button.style.border = '0.3em solid #00adef';
+try {
 document.getElementsByClassName("navbar-nav")[0].childNodes.forEach(function (anker) { 
 if (/elabftw/.test(anker.href)) {
 button.style.border = '0.3em solid #29aeb9';
 return;}})
+}
+catch(error){}
 
 button.style.padding = '0px';
 
@@ -80,13 +83,34 @@ abortButton.style.heigth = '100px';
 abortButton.style.display = 'none';
 abortButton.style.visibility = 'hidden';
 
+/*
 var msgBoard = document.createElement('input');
 overlay.appendChild(msgBoard);
 msgBoard.type = 'text';
 msgBoard.id = 'msgBoard';
-msgBoard.style.visibility = 'hidden';
-msgBoard.style.display = 'none';
 msgBoard.disabled = 'true';
+msgBoard.style.display = "block";
+msgBoard.style.visibility = "visible";
+msgBoard.style.zIndex = '10000';
+msgBoard.style.background = "rgb(255, 255, 255)";
+msgBoard.style.border = "0.2em solid rgb(0, 0, 0)";
+msgBoard.style.fontSize = "2.0em";
+msgBoard.value = "Scan code with barcode-scanner or use the camera";
+*/
+var msgBoard = document.createElement('textarea');
+overlay.appendChild(msgBoard);
+msgBoard.wrap = 'soft';
+msgBoard.id = 'msgBoard';
+msgBoard.disabled = 'true';
+msgBoard.style.display = "block";
+msgBoard.style.visibility = "visible";
+msgBoard.style.zIndex = '10000';
+msgBoard.style.background = "rgb(255, 255, 255)";
+msgBoard.style.border = "0.2em solid rgb(0, 0, 0)";
+msgBoard.style.fontSize = "2.0em";
+msgBoard.rows = 4;
+msgBoard.cols = 20;
+msgBoard.textContent = "Scan code with barcode-scanner or use the camera";
 
 var inputField = document.createElement('input');
 overlay.appendChild(inputField);

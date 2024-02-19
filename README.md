@@ -96,6 +96,7 @@
 - **[5]**: improve the scanspeed (e.g. shearing correction, image improvements)
 - **[5]**: show an error texts if something unusal happen (especially a warning if the a user tried to add a link without being inside an iframe; connection issues)
 - **[4]**: add useability of physical barcodescanner devices
+- **[4]**: add an offline modus (e.g. if there's no connection to the server, create a dummy entry and translate the dummy entries when reconnected to the server by creating or pasting links)
 - **[3]**: add more customizations (edit the link text, insert eLabFTW API calls)
 - **[3]**: prevent barcode entries from being deleted
 - **[3]**: add button for switching cameras (for devices with front and back cameras, i.e. tablets or smartphones)
