@@ -60,7 +60,7 @@ def post_dmtx_category(api_client): #aka item_type in elabftw
     "experiment_id":{"type":"text","group_id":null,"required":true}, \
     "datamatrix_code":{"type":"text","group_id":null,"required":true,"description":"datamatrix code: "}, \
     "experiment_name":{"type":"text","group_id":null,"required":true}}}', \
-     'title': 'sample_tracking_codes'}
+     'title': 'sample_tracking_code'}
     response = itemsTypesApi.patch_items_type(itemId, body=body)
     print("I just created the category: ", response)
     return dump_dict_to_json(response.to_dict())
@@ -70,9 +70,9 @@ def check_if_exist_category(api_client):
     response = itemsTypesApi.read_items_types()
     for r in response:
         if r.title == 'sample_tracking_code' and r.color == 'f90f0f':
-	        print("sample_tracking_code category has been found, won't be created")	    
-	        dump_dict_to_json(r.to_dict())
-	        return 1
+            print("sample_tracking_code category has been found, won't be created")	    
+            dump_dict_to_json(r.to_dict())
+            return 1
     return post_dmtx_category(api_client)
 	    	
 if __name__ == '__main__':

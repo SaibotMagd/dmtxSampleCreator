@@ -65,7 +65,13 @@ def get_sample_data_from_barcode(sampleParameter):
             if r.metadata.rfind('"datamatrix_code": {"type": "text", "value": ' + '"' + sampleParameter['decodedText'] + '"') != -1:
                 print("--> I found something:" , r)
                 insertDict = reshape_request(r.to_dict(), apiParams, elnName)
-    
+
+        if insertDict == {}:
+            print("I found nothing here:", response)
+            print("I searched for: ")
+            print(('"datamatrix_code": {"type": "text", "value": ' + '"' + sampleParameter['decodedText'] + '"'))
+
+
     ## create the search-json for searching in rspace-inventory
     if elnName == 'rspace':
         queryHeaders = ["datamatrix code: ", "Scanned Unknown: ", "Scanned QR Code: "]
@@ -184,7 +190,7 @@ def set_new_sample(sampleParameter, secrets_source='', elnName='rspace'):
         base_json['extra_fields']['username'] = {}
         base_json['extra_fields']['create_time'] = {}
         base_json['extra_fields']['experiment_id'] = {}
-        base_json['extra_fields']['datamatrix'] = {}
+        base_json['extra_fields']['datamatrix_code'] = {}
         base_json['extra_fields']['experiment_name'] = {}
         base_json['extra_fields']['username']['type'] = "text"
         base_json['extra_fields']['username']['value'] = sampleParameter['userName']      
@@ -192,8 +198,8 @@ def set_new_sample(sampleParameter, secrets_source='', elnName='rspace'):
         base_json['extra_fields']['create_time']['value'] = timestamp
         base_json['extra_fields']['experiment_id']['type'] = "text"
         base_json['extra_fields']['experiment_id']['value'] = sampleParameter['uniqueId']
-        base_json['extra_fields']['datamatrix']['type'] = "text"        
-        base_json['extra_fields']['datamatrix']['value'] = sampleParameter['decodedText']
+        base_json['extra_fields']['datamatrix_code']['type'] = "text"        
+        base_json['extra_fields']['datamatrix_code']['value'] = sampleParameter['decodedText']
         base_json['extra_fields']['experiment_name']['type'] = "text"
         base_json['extra_fields']['experiment_name']['value'] = sampleParameter['docName']      
         # get the patched item

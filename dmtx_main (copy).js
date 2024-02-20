@@ -1,13 +1,12 @@
+//let context = canvas.getContext('2d');
 
-let activeElement; // save the above DOM Element as link-target
-let html5Qrcode; // save the object constructed by html5qrcode class
-let iframeDoc; // save the current iframe element as link-target
-let savePos; // save the position inside the iframeDoc element to paste the link at a specific point
-
+let activeElement; // global Variable
+let html5Qrcode;
+let iframeDoc;
+let savePos;
 // check if activate ELN = elabFTW 
-let elnType = 'rspace'; // set rspace as default ELN
-let serverUrl = 'http://127.0.0.1:5000/upload' // set server IP to connect to the flask backend server
-// check if the border of the button matches the color of elabFTW (see create_buttons.js where the border-color decides the ELN)
+let elnType = 'rspace'; 
+let serverUrl = 'http://127.0.0.1:5000/upload'
 try {
     if (document.getElementById('button').style.border.split("rgb")[1] === '(41, 174, 185)'){
     elnType = 'elabftw'; 
@@ -15,40 +14,34 @@ try {
 } catch(error){
     console.log("I'm in rspace!")
 }
-
-function pasteUrl(resPart, decodedText, iframeDoc) {
+function pasteUrl(resPart, decodedText, iframeDoc) {  
   let range = null;
-  let pasteNode = null;
+  let pasteNode = null;  
 
-  function insertNode(iframeDoc, pasteNode) {
+  function insert_node(iframeDoc, pasteNode) {    
     try {
-      range = iframeDoc.getSelection().getRangeAt(0);
-      range.insertNode(pasteNode);
-    } catch (e) {
-      console.log("auto-iframe-search found: ", iframeDoc);
-      iframeDoc.insertAdjacentHTML("beforeBegin", pasteNode);
+    range = iframeDoc.getSelection().getRangeAt(0);            
+    range.insertNode(pasteNode);
     }
+    catch(e) {
+      console.log("auto-iframe-search found: ", iframeDoc)
+      iframeDoc.insertAdjacentHTML("beforeBegin", pasteNode)
+    }
+  }  
+
+  function get_pasteNode(resPart, decodedText){
+    pasteNode = decodedText;
+    pasteNode += "_" + resPart['name'] + "_" + resPart['createdBy'] + "_" + resPart['created'];
+    pasteNode = createLink(resPart['link'], pasteNode);    
   }
-
-  function getPasteNode(resPart, decodedText) {
-    let pasteNode = decodedText;
-    pasteNode += "_" + resPart.name + "_" + resPart.createdBy + "_" + resPart.created;
-    console.log("res looks like", resPart)
-    console.log("the created link looks like: ", resPart.link)
-    pasteNode = createLink(resPart.link, pasteNode);
-    return pasteNode
-  }
-
-  pasteNode = getPasteNode(resPart, decodedText);  
-  insertNode(iframeDoc, pasteNode);
-
-  // The keypress event forces the rspace page to save the change in innerHTML
-  let keyboardEvent = new KeyboardEvent("keypress", { key: "U" });
+  get_pasteNode(resPart, decodedText);
+  insert_node(iframeDoc, pasteNode);
+  // the keypress force the rspace page to save the change in innerHTML
+  let keyboardEvent = new KeyboardEvent("keypress", {key: "U"});        
   try {
-    iframeDoc.body.dispatchEvent(keyboardEvent);
-  } catch (e) {
-    console.log("no dispatch event");
+  iframeDoc.body.dispatchEvent(keyboardEvent);
   }
+  catch(e) {console.log("no dispatch event")}
 }
 
 // create a link string
@@ -197,19 +190,19 @@ function sendToServer(decodedText, customName='') {
   xhr.send(xhrString);
   xhr.onload = () => {
     xhr.onload = null;
-    if (xhr.readyState === 4 && xhr.status === 200) {      
+    if (xhr.readyState === 4 && xhr.status === 200) {
+      console.log("--> OG i got from server: " + xhr.responseText);
       let response = JSON.parse(xhr.responseText)
-      // console.log("--> OG i got from server: " + response);
       if (Object.keys(response)[0] != '0') {                
         toggle_elements(0); //new sample = 0 i.e. something found so no "new sample" necessary
         window.stop();
         getActiveElement();
         //console.log("got an active Element: " + activeElement)        
-        
+        console.log("i got from server: " + response);
         // show the decodedText sample entries from database in a resultField
         let resultField = document.getElementById("resultField");                
         let res = makeLinksClickable(response);
-        res = JSON.stringify(res, null, 4);                      
+        res = JSON.stringify(res, null, 4);        
         resultField.innerHTML = res.replace(/,/g, ",<br />");
         resultField.contentEditable = "false";
         // create a message for sucessful found sample
@@ -219,19 +212,11 @@ function sendToServer(decodedText, customName='') {
         let insertButton = document.getElementById("insertButton")
         insertButton.addEventListener("click", function() {  
           insertButton.removeEventListener("click", arguments.callee);
-          console.log("i got from server: " + res);  
-          if (elnType == 'elabftw') {
-            console.log("i got json key element: " + Object.keys(res))
-            pasteUrl(res[Object.keys(res)[0]][0], decodedText, iframeDoc);
-          }
-        if (elnType == 'rspace') {
           for (const responsePart in response){
             //console.log(response[responsePart][0])
             pasteUrl(response[responsePart][0], decodedText, iframeDoc);
-            
+            overlay.style.display = "none";
           }
-          overlay.style.display = "none";
-        }          
         })
 
         return;
