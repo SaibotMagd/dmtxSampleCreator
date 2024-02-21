@@ -35,11 +35,11 @@
 
 ### 0.6
 - first working version for elabftw but with some drawbacks:
-1. you need to set a category to save the sample codes into the database; you can automate this by running: elabftw_item_category_check.py -> it creates the necessary category and write mandatory category_id into a json file: elabftw_category_id.json so the sample creator can find it
-2. you need the "elabftw_python" package -> "pip install elabftw_python"
-3. it only works if elabftw uses the "hypernext" version, not a final version like 4.9.0 because of browser camera policy
-4. you have to click on a position where to set the link to the item in the tinyMCE text window of the experiment
-5. largest drawback: as the elabftw api doesn't provide a "search for content" function; I had to get all items every created and search for the code in all of the items; in the medium term, this will lead to the search time increasing more and more until it leads to a timeout. i will try to find out the exact time so that the database can possibly be cleaned beforehand. if no better api database access can be made possible, it will probably be indispensable to access the database directly, which represents a major security risk.
+  1. you need to set a category to save the sample codes into the database; you can automate this by running: elabftw_item_category_check.py -> it creates the necessary category and write mandatory category_id into a json file: elabftw_category_id.json so the sample creator can find it
+  2. you need the "elabftw_python" package -> "pip install elabftw_python"
+  3. it only works if elabftw uses the "hypernext" version, not a final version like 4.9.0 because of browser camera policy  
+  4. largest drawback: as the elabftw api doesn't provide a "search for content" function; I had to get all items every created and search for the code in all of the items; in the medium term, this will lead to the search time increasing more and more until it leads to a timeout. i will try to find out the exact time so that the database can possibly be cleaned beforehand. if no better api database access can be made possible, it will probably be indispensable to access the database directly, which represents a major security risk.
+- barcode handscanner functionality doesn't work yet in chromium, so firefox is necessary (but other features doesn't work in firefox...)
 
 ### 0.5 
 - changed to the current state of the art manifest version 3
@@ -92,41 +92,17 @@
 
 *List in no particular order ;) (Priority [1..5])*
 
-- **[5]**: add full eLabFTW support
+- **[5]**: add full eLabFTW support (DONE)
 - **[5]**: improve the scanspeed (e.g. shearing correction, image improvements)
-- **[5]**: show an error texts if something unusal happen (especially a warning if the a user tried to add a link without being inside an iframe; connection issues)
-- **[4]**: add useability of physical barcodescanner devices
+- **[5]**: show an error texts if something unusal happen (especially a warning if the a user tried to add a link without being inside an iframe (DONE fixed by adding the link in the beginning of the frame)
+- **[4]**: add feature to use barcode hand scanner devices
 - **[4]**: add an offline modus (e.g. if there's no connection to the server, create a dummy entry and translate the dummy entries when reconnected to the server by creating or pasting links)
 - **[3]**: add more customizations (edit the link text, insert eLabFTW API calls)
 - **[3]**: prevent barcode entries from being deleted
 - **[3]**: add button for switching cameras (for devices with front and back cameras, i.e. tablets or smartphones)
 - **[3]**: improved comprehensibility of the interface (hover infos, more intuitve button images)
-- **[3]**: speed up the decoding, it has not really gotten better with frontend decoding
 - **[2]**: improve folder structure/ refactoring (especially use full HTML5 capacities not only javascript and CSS)
-- **[2]**: add batch-scan possibility (**depends on user feedback, so this possible function will be re-evaluated after enduser-tests**)
-- **[2]**: if multiple samples are found for a code, allow only one of the samples to be linked into the text (**conceptual question if such a function should be allowed for sample tracking, as a code should only be used for one sample object; there might be scenarios where this makes sense, on the other hand a double use of a code indicates an error in the database; will be discussed after user feedback**)
-- **[2]**: create a mode to search for samples anywhere not only inside a document
-- **[2]**: package the extension to use it as regular extension
-
-## 0.4 Roadmap/ TODO in no particular order ;) (Priority [1..5])
-
-(TODO: create a mode to search for samples anywhere not only inside a document)
-
-- **[5]**: speed up the decoding
-- **[5]**: change the workflow so it scans for codes all the time and only close and insert after it found something (no more record button pressing)
-- **[5]**: show an error texts if something unusal happen (especially a warning if the a user tried to add a link without being inside an iframe; no active iframe = nothing can be paste into an active iframe)
-- **[5]**: use the userName transmitted from the client to create samples not the API username (in the final version samples will be created by the admin, so the created username should be the one who initiate the creation of the sample)
-- **[5]**: add uniqueID of the current ELN document
-- **[4]**: add a button to directly name the sample from extension interface
-- **[4]:** show frame sent to server after pushing record button instead of the video stream (maybe show a frame surrounding the decoded matrix code)
-- **[4]**: add customization support (edit the link text, insert eLabFTW API calls)
-- **[4]**: create a final server structure to be used instead of "non SSL flask development server"
-- **[3]**: improved comprehensibility of the interface (hover infos, open-close camera button, easier to understand record button)
-- **[3]**: add eLabFTW support (full support)
-- **[3]**: add an option to not use the "record button" to link a sample (instead scan every second and insert link after sucessful decoding)
-- **[2]**: improve folder structure/ refactoring
-- **[2]**: include another decoder to also decode other kind of codes like QR codes and barcodes
-- **[2]**: add batch-scan possibility (function depends on user feedback)
-- **[2]**: package the extension to use it as regular extension
-- **[1]**: add button for switching cameras (for devices with front and back cameras, i.e. tablets or smartphones)
-- **[1]**: show a progress/ waiting bar
+- **[2]**: create a mode to search for samples anywhere not only inside a document (e.g. without pasting the link into a frame just for clicking on inventory link)
+- **[2]**: package the extension to use it as regular extension (DONE)
+- **[1]**: add batch-scan feature (**depends on user feedback, so this possible function will be re-evaluated after enduser-tests**)
+- **[1]**: if multiple samples are found for a code, allow only one of the samples to be linked into the text (**conceptual question if such a function should be allowed for sample tracking, as a code should only be used for one sample object; there might be scenarios where this makes sense, on the other hand a double use of a code indicates an error in the database; will be discussed after user feedback**)

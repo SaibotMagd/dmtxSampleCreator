@@ -7,6 +7,7 @@ let savePos; // save the position inside the iframeDoc element to paste the link
 // check if activate ELN = elabFTW 
 let elnType = 'rspace'; // set rspace as default ELN
 let serverUrl = 'http://127.0.0.1:5000/upload' // set server IP to connect to the flask backend server
+// serverUrl = 'https://cni-wiki.int.lin-magdeburg.de/dmx2rspace/upload' // rspace
 // check if the border of the button matches the color of elabFTW (see create_buttons.js where the border-color decides the ELN)
 try {
     if (document.getElementById('button').style.border.split("rgb")[1] === '(41, 174, 185)'){
@@ -26,15 +27,15 @@ function pasteUrl(resPart, decodedText, iframeDoc) {
       range.insertNode(pasteNode);
     } catch (e) {
       console.log("auto-iframe-search found: ", iframeDoc);
-      iframeDoc.insertAdjacentHTML("beforeBegin", pasteNode);
+      console.log("the created link looks like: ", pasteNode)
+      iframeDoc.appendChild(pasteNode);
     }
   }
 
   function getPasteNode(resPart, decodedText) {
     let pasteNode = decodedText;
     pasteNode += "_" + resPart.name + "_" + resPart.createdBy + "_" + resPart.created;
-    console.log("res looks like", resPart)
-    console.log("the created link looks like: ", resPart.link)
+    console.log("res looks like", resPart)    
     pasteNode = createLink(resPart.link, pasteNode);
     return pasteNode
   }
@@ -62,11 +63,13 @@ function createLink(linkValue, titleValue) {
 }
 
 function getActiveElement() {    
-  if (document.activeElement.tagName != "IFRAME") {
-    console.log("I search for iframe1!")
+  if (document.activeElement.tagName != "IFRAME") {    
+    try {
     activeElement = document.getElementById("body_area_ifr").contentDocument.getElementById("tinymce");
-    iframeDoc = activeElement.children[0];
+    iframeDoc = activeElement.children[1];
     let start = 0;
+    }
+    catch(e) {console.log("you're in rspace!")}
     return}
   iframeDoc = document.activeElement.contentDocument;     
   let selection = iframeDoc.getSelection(); // read current cursor position inside iframe            
@@ -199,6 +202,7 @@ function sendToServer(decodedText, customName='') {
     xhr.onload = null;
     if (xhr.readyState === 4 && xhr.status === 200) {      
       let response = JSON.parse(xhr.responseText)
+      document.getElementById("reader").style.display = "none";
       // console.log("--> OG i got from server: " + response);
       if (Object.keys(response)[0] != '0') {                
         toggle_elements(0); //new sample = 0 i.e. something found so no "new sample" necessary
@@ -209,6 +213,7 @@ function sendToServer(decodedText, customName='') {
         // show the decodedText sample entries from database in a resultField
         let resultField = document.getElementById("resultField");                
         let res = makeLinksClickable(response);
+        let res2 = response[Object.keys(response)[0]];
         res = JSON.stringify(res, null, 4);                      
         resultField.innerHTML = res.replace(/,/g, ",<br />");
         resultField.contentEditable = "false";
@@ -219,10 +224,10 @@ function sendToServer(decodedText, customName='') {
         let insertButton = document.getElementById("insertButton")
         insertButton.addEventListener("click", function() {  
           insertButton.removeEventListener("click", arguments.callee);
-          console.log("i got from server: " + res);  
+          console.log("i got res from server: " + res);  
           if (elnType == 'elabftw') {
-            console.log("i got json key element: " + Object.keys(res))
-            pasteUrl(res[Object.keys(res)[0]][0], decodedText, iframeDoc);
+            console.log("i got json key element: " + res2)
+            pasteUrl(res2[0], decodedText, iframeDoc);
           }
         if (elnType == 'rspace') {
           for (const responsePart in response){
