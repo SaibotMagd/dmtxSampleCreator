@@ -1,4 +1,3 @@
-
 let activeElement; // save the above DOM Element as link-target
 let html5Qrcode; // save the object constructed by html5qrcode class
 let iframeDoc; // save the current iframe element as link-target
@@ -6,12 +5,14 @@ let savePos; // save the position inside the iframeDoc element to paste the link
 
 // check if activate ELN = elabFTW 
 let elnType = 'rspace'; // set rspace as default ELN
-let serverUrl = 'http://127.0.0.1:5000/upload' // set server IP to connect to the flask backend server
-// serverUrl = 'https://cni-wiki.int.lin-magdeburg.de/dmx2rspace/upload' // rspace
+let serverUrl = 'https://cni-wiki.int.lin-magdeburg.de/dmx2rspace/upload' // set rspace server IP to connect to the flask backend server
 // check if the border of the button matches the color of elabFTW (see create_buttons.js where the border-color decides the ELN)
+serverUrl = 'http://127.0.0.1:5000/upload'
+
 try {
     if (document.getElementById('button').style.border.split("rgb")[1] === '(41, 174, 185)'){
-    elnType = 'elabftw'; 
+      serverUrl = 'http://127.0.0.1:5000/upload'
+      elnType = 'elabftw'; 
     console.log("I'm ftw");}
 } catch(error){
     console.log("I'm in rspace!")
@@ -28,8 +29,24 @@ function pasteUrl(resPart, decodedText, iframeDoc) {
     } catch (e) {
       console.log("auto-iframe-search found: ", iframeDoc);
       console.log("the created link looks like: ", pasteNode)
-      iframeDoc.appendChild(pasteNode);
+      warningWindow();
+      overlay.style.display = "none";
+      try {
+      iframeDoc.appendChild(pasteNode);      
     }
+    catch (e){
+      warningWindow();
+    }
+    }
+  }
+
+  function warningWindow() {  
+    warningDiv.style.display = "block";    
+  // Verstecke das Fenster nach 3 Sekunden
+  setTimeout(() => {
+    warningDiv.style.display = "none";
+  }, 5000);
+
   }
 
   function getPasteNode(resPart, decodedText) {
@@ -48,7 +65,9 @@ function pasteUrl(resPart, decodedText, iframeDoc) {
   try {
     iframeDoc.body.dispatchEvent(keyboardEvent);
   } catch (e) {
+    warningWindow();
     console.log("no dispatch event");
+    overlay.style.display = "none";
   }
 }
 
@@ -108,7 +127,7 @@ button.addEventListener("click", function() {
     toggle_elements();    
     
     // for easier testing
-    decodedText = "13370";
+    decodedText = "93370";
     sendToServer(decodedText);
     //
 
@@ -122,8 +141,8 @@ button.addEventListener("click", function() {
         overlay.style.display = "none"; 
       }
     }  
-    const config = {fps: 50, qrbox:{width: window.innerHeight*0.2, height: window.innerHeight*0.2}}
-    html5Qrcode.start({facingMode:"environment"}, config, qrCodeSucessCallback );                
+    const config = {fps: 500, qrbox:{width: window.innerHeight*0.4, height: window.innerHeight*0.4}}
+    html5Qrcode.start({facingMode:"environment"}, config, qrCodeSucessCallback, verbose= true );                
     
     }    
     else {
@@ -135,12 +154,12 @@ button.addEventListener("click", function() {
     }
   });
 
-function get_xhrString(newSample, customName, decodedText) {
-  if (elnType === 'elabftw') return build_elabftw_xhrString(newSample, customName, decodedText);
-  if (elnType === 'rspace') return build_rspace_xhrString(newSample, customName, decodedText);
+function get_xhrString(srvResponse, customName, decodedText) {
+  if (elnType === 'elabftw') return build_elabftw_xhrString(srvResponse, customName, decodedText);
+  if (elnType === 'rspace') return build_rspace_xhrString(srvResponse, customName, decodedText);
 }
 
-function build_elabftw_xhrString(newSample, customName, decodedText){
+function build_elabftw_xhrString(srvResponse, customName, decodedText){
   // get document name
   let docName = document.getElementById('title_input').value;
   // get username
@@ -156,7 +175,7 @@ function build_elabftw_xhrString(newSample, customName, decodedText){
                   'docName': docName,
                   'uniqueId': uniqueId,
                   'decodedText': decodedText,
-                  'newSample': newSample,
+                  'srvResponse': srvResponse,
                   'elnName': 'elabftw'
   }
   // insert a customName for the newly created sample
@@ -165,7 +184,7 @@ function build_elabftw_xhrString(newSample, customName, decodedText){
   return xhrString
   }
 
-function build_rspace_xhrString(newSample, customName, decodedText){
+function build_rspace_xhrString(srvResponse, customName, decodedText){
   let docName = document.getElementById('recordNameInBreadcrumb').innerHTML;
   // scrap username from current page
   let userName = document.getElementById('witnessDocumentDialog').innerHTML;
@@ -180,19 +199,19 @@ function build_rspace_xhrString(newSample, customName, decodedText){
                   'docName': docName,
                   'uniqueId': uniqueId,
                   'decodedText': decodedText,
-                  'newSample': newSample,
+                  'srvResponse': srvResponse,
                   'elnName': 'rspace'
   }
   // insert a customName for the newly created sample
   if (customName != '') {xhrString['customName'] = customName}
-  console.log(xhrString);
+  console.log("send to server: ", xhrString);
   return xhrString
   }
 
 function sendToServer(decodedText, customName='') {
-  let xhrString = get_xhrString(0, customName, decodedText);
+  let xhrString = get_xhrString(100, customName, decodedText);
   xhrString = JSON.stringify(xhrString);
-  console.log(xhrString)
+  console.log("send to server: ", xhrString);
   const xhr = new XMLHttpRequest();
   //xhr.open('POST', 'https://cni-wiki.int.lin-magdeburg.de/dmx2rspace/upload', true);
   xhr.open('POST', serverUrl, true);            
@@ -201,11 +220,14 @@ function sendToServer(decodedText, customName='') {
   xhr.onload = () => {
     xhr.onload = null;
     if (xhr.readyState === 4 && xhr.status === 200) {      
-      let response = JSON.parse(xhr.responseText)
+      let response = JSON.parse(xhr.responseText);
+      console.log("get from server: ", response);
       document.getElementById("reader").style.display = "none";
       // console.log("--> OG i got from server: " + response);
-      if (Object.keys(response)[0] != '0') {                
-        toggle_elements(0); //new sample = 0 i.e. something found so no "new sample" necessary
+      if (Object.keys(response)[0] != '0') {                        
+        console.log("I'm right!")
+        let srvResponse = 100
+        toggle_elements(srvResponse); //new sample = 0 i.e. something found so no "new sample" necessary
         window.stop();
         getActiveElement();
         //console.log("got an active Element: " + activeElement)        
@@ -216,24 +238,27 @@ function sendToServer(decodedText, customName='') {
         let res2 = response[Object.keys(response)[0]];
         res = JSON.stringify(res, null, 4);                      
         resultField.innerHTML = res.replace(/,/g, ",<br />");
-        resultField.contentEditable = "false";
-        // create a message for sucessful found sample
-        //msgBoard.value = getUserMsg(decodedText, 1, elnType)
-        msgBoard.textContent = getUserMsg(decodedText, 1, elnType)
+        resultField.contentEditable = "false";        
         // create the event for insertButton to insert the sample entries found for the decodedText
         let insertButton = document.getElementById("insertButton")
+        // create a message for sucessful found sample
+        // search if any of the items found in the database is trashed; if so don't insert this code 
+        try{
+          if (Object.values(response).flat().find(entry => entry.srvResponse === 101)['srvResponse'] === 101) {srvResponse = 101};}
+        catch {console.log("no 101")}
+        msgBoard.textContent = getUserMsg(decodedText, srvResponse, elnType)
+        if (srvResponse == 101) {insertButton.style.display = "none"}
         insertButton.addEventListener("click", function() {  
-          insertButton.removeEventListener("click", arguments.callee);
+          //insertButton.removeEventListener("click", arguments.callee);
           console.log("i got res from server: " + res);  
           if (elnType == 'elabftw') {
             console.log("i got json key element: " + res2)
             pasteUrl(res2[0], decodedText, iframeDoc);
           }
         if (elnType == 'rspace') {
-          for (const responsePart in response){
-            //console.log(response[responsePart][0])
-            pasteUrl(response[responsePart][0], decodedText, iframeDoc);
-            
+          for (const responsePart in response){            
+            console.log("res part: ", response[responsePart][0])
+            pasteUrl(response[responsePart][0], decodedText, iframeDoc);            
           }
           overlay.style.display = "none";
         }          
@@ -242,19 +267,19 @@ function sendToServer(decodedText, customName='') {
         return;
       }
       if (Object.keys(response)[0] == '0') {
-        toggle_elements(1); //new sample = 1 i.e. nothing found create a new sample
+        toggle_elements(0); //new sample = 1 i.e. nothing found create a new sample
         // get msg to print for unsucessful search for code in database
         // msgBoard.value = getUserMsg(decodedText, 0, elnType)
         msgBoard.textContent = getUserMsg(decodedText, 0, elnType)
         let inputField = document.getElementById("inputField")        
         let inputValue = get_defaultSampleName(JSON.parse(xhrString), response['0']);
-        console.log("inputValue: " + inputValue)
+        //console.log("inputValue: " + inputValue)
         inputField.value = inputValue;
         let insertButton = document.getElementById("insertButton")
         // create an event listener to insert a newly created link
         insertButton.addEventListener("click", function() {            
           insertButton.removeEventListener("click", arguments.callee);
-          xhrString = get_xhrString(1, inputField.value, decodedText);
+          xhrString = get_xhrString(0, inputField.value, decodedText);
           xhrString = JSON.stringify(xhrString);
           const xhr = new XMLHttpRequest();
           //xhr.open('POST', 'https://cni-wiki.int.lin-magdeburg.de/dmx2rspace/upload', true);      
@@ -265,18 +290,18 @@ function sendToServer(decodedText, customName='') {
           if (xhr.readyState === 4 && xhr.status === 200) {
             let response = JSON.parse(xhr.responseText)
             for (const responsePart in response){
-              //console.log(response[responsePart][0])
+              console.log(response)
               pasteUrl(response[responsePart][0], decodedText, iframeDoc);
-              overlay.style.display = "none";
+              //overlay.style.display = "none";
           } 
         }}
         })
     }
     }
-    console.error(xhr.statusText);
-  };
+    //console.error(xhr.statusText);
+  }};
   
-}
+
 function get_defaultSampleName(xhrString, res){
   let defaultName = '';  
   console.log(typeof(xhrString))
@@ -303,7 +328,7 @@ function get_pasteString(response, decodedText){
   //secondlvl key name shows the whole name for the sample entry consisting of "decodedDatamatrixCode_nameOfOpenRspaceDocument_createdTimestamp"
   let sampleUrl = response['link'];          
   sampleUrl = sampleUrl.replace(/https?:\/\/[^\/]+/, "");
-  if (response["newlyCreated"]) {
+  if (response["srvResponse"] == 100) {
     var linkText = `<p><a href="${sampleUrl}" target="_blank" rel="noopener">[` + 
               `${response["name"]} NEW created sample ` + 
               `created: ${response["created"]} ` +
@@ -348,10 +373,15 @@ const callback = function(mutationsList, observer) {
 const observer = new MutationObserver(callback);
 observer.observe(targetNode, config);
 
-function toggle_elements(newSample='') {  
+function toggle_elements(srvResponse=404) {  
   // result Elements  
   // if camera is open none of the fields should be open
-  if (newSample=='') {
+  // serverResponse codes:
+  //    404: somethings not working
+  //      0: no code found (e.g. can be created)
+  //    100: code already in database (e.g. link(s) can be paste)
+  //    101: code already in database but has been trashed (e.g. link(s) can't be paste or created as long as there're in trash)
+  if (srvResponse == 404) {
     inputField.style.display = "none";  
     insertButton.style.display = "none";
     abortButton.style.display = "none";
@@ -359,7 +389,7 @@ function toggle_elements(newSample='') {
   } 
   overlay.style.display = "block";
   
-  if (Number.isInteger(newSample)) {
+  if (srvResponse != 404) {
     msgBoard.style.visibility = "visible";   
     msgBoard.style.display = "block";
     insertButton.style.visibility = "visible";      
@@ -367,15 +397,23 @@ function toggle_elements(newSample='') {
     abortButton.style.visibility = "visible";      
     abortButton.style.display = "block";  
 
-    if (newSample == 1) {
+    if (srvResponse == 0) {
       msgBoard.style.background = "rgb(255, 255, 0)"
       msgBoard.style.border = "5px solid rgb(255, 255, 0)";      
       inputField.value = "placeholder"
       inputField.style.visibility = "visible";  
       inputField.style.display = "block";     
     }
-    if (newSample == 0) {
-      console.log("toggle case 0")
+    if (srvResponse == 100) {
+      console.log("toggle case 100")
+      resultField.style.visibility = "visible"; 
+      resultField.style.display = "block";
+    }
+    if (srvResponse == 101) {
+      console.log("toggle case 101")      
+      msgBoard.style.background = "rgb(255, 0, 0)";
+      msgBoard.style.border = "5px solid rgb(255, 0, 0)";
+      msgBoard.style.borderStyle = "dashed";
       resultField.style.visibility = "visible"; 
       resultField.style.display = "block";
     }        
@@ -401,15 +439,40 @@ function makeLinksClickable(json) {
   return result;
 }
 // create the message to be shown after searching the sample in inventory or database
-function getUserMsg(decodedText, found, elnType) {
-        if (elnType == 'elabftw') {
-            if (found) {
-        return `${decodedText} was found in the elabftw database `}
-        return `${decodedText} is NOT in elabftw database, insert a name for the sample or use the default`
-        }
-        if (elnType == 'rspace') {
-                if (found) {
-        return `${decodedText} was found in the rspace inventory `}
-        return `${decodedText} is NOT in rspace inventory, insert a name for the sample or use the default`
-        }
+function getUserMsg(decodedText, found, elnType) {        
+  // build a msg
+  let elnStr = elnType + " database"
+  if (elnType != 'rspace') {
+    let elnStr = elnType + " inventory"}      
+  if (found == 100) {
+    return `${decodedText} was found in the ${elnStr} `}
+  if (found == 101) {
+    return `WARNING!!! The code ${decodedText} is in the ${elnStr} , but had been moved to the trash. To insert it you remove it from trash first.`}
+  return `${decodedText} is NOT in ${elnStr}, insert a name for the sample or accept the default value (in grey)`  
+}
+
+var barcode = "";
+var interval;
+document.addEventListener('keydown', function(evt) {
+    if (interval)
+        clearInterval(interval);
+    if (evt.code == 'Enter') {
+        if (barcode)
+            handleBarcode(barcode);
+        barcode = "";
+        return;
+    }
+    if (evt.code != 'Shift')
+        barcode += evt.key;
+    interval = setInterval(() => barcode = "", 20);
+});
+
+function findObjectById(objDict, resToFind) {
+  for (const key in objDict) {
+      console.log(objDict[key].srvResponse)
+      if (objDict[key].srvResponse === resToFind) {
+          return objDict[key]; // Gibt das gesamte Objekt zurück
+      }
+  }
+  return null; // Falls der Wert nicht gefunden wurde
 }

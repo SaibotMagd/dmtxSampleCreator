@@ -1,6 +1,5 @@
 import os
 from datetime import datetime
-import cv2
 import argparse
 from flask import Flask, redirect, request, jsonify
 from flask_cors import CORS
@@ -9,9 +8,11 @@ import numpy as np
 import base64
 import json
 import ssl
-import elabapi_python
-#context = ssl.SSLContext(ssl.PROTOCOL_TLS)
-#context.load_cert_chain('127.0.0.1.pem', '127.0.0.1-key.pem')
+try: 
+    import elabapi_python
+    import ast
+except:
+    print("elabFTW API package was not found! (install with 'pip install elabapi-python' or use ELN-agnostic mode instead)")
 
 globalResult = []
 
@@ -19,20 +20,19 @@ app = Flask(__name__)
 CORS(app)
 
 @app.route('/upload', methods=['POST'])
-def upload():
-    print("here I'm")    
+def upload():      
     import sys
     print(request)
     request_data = request.get_json()
     print("the client sent: ", request_data)                         
-    ## {'userName': 'saibot_magd', 'docName': 'Untitled', 'uniqueId': '1', 'decodedText': '1337', 'newSample': 1, 'elnName': 'elabftw', 'customName': '1337_Untitled_1_saibot_magd_2024-1-3 10:57:49'}
+    ## {'userName': 'saibot_magd', 'docName': 'Untitled', 'uniqueId': '1', 'decodedText': '1337', 'srvResponse': 1, 'elnName': 'elabftw', 'customName': '1337_Untitled_1_saibot_magd_2024-1-3 10:57:49'}
 
-    if request_data['newSample'] == 0:
+    if request_data['srvResponse'] != 0:
         sampleEntry = get_sample_data_from_barcode(request_data)
         return sampleEntry
 
     ## create a dict consisting of the necessary infos from client
-    if request_data['newSample'] == 1:    
+    if request_data['srvResponse'] == 0:    
         ## use the sampleParameter dict with docName, userName, barcode to create a new sample out of these infos
         r = set_new_sample(request_data, '', request_data['elnName'])                
         #sampleEntry = shape_result_dict({}, r, 1, elnName)           
@@ -77,12 +77,15 @@ def get_sample_data_from_barcode(sampleParameter):
         queryHeaders = ["datamatrix code: ", "Scanned Unknown: ", "Scanned QR Code: "]
         insertDict = {}
         for i, queryHead in enumerate(queryHeaders):
-            params = {"query": f"{queryHead}{sampleParameter['decodedText']}", "pageNumber": 0, "pageSize": 20, "orderBy": "name asc"}    
+            params = {"query": f"{queryHead}{sampleParameter['decodedText']}", 
+                      "pageNumber": 0, "pageSize": 20, "orderBy": "modificationDate asc", "deletedItems": "INCLUDE"}    
             print(params)
             ## send get call to server
             r = requests.get(url, params=params, headers=headers, verify=False)    
+            print("I found: ", r)
+            print("I found: ", r.text)
             r = r.json()    
-            ## build a dict consisting all samples with he particular barcode in database
+            ## build a dict consisting all samples with this particular barcode in database
             insertDict = reshape_request(r, insertDict, elnName)            
         
     ## if no sample have been found send a 0 back to client to initiate the "ask for create sample frame" (sent the custom order of sample name back to the client; from secret.json file)
@@ -105,25 +108,12 @@ def reshape_request(r, insertDict, elnName="rspace"):
     # should return the last record found with the particular dmtx number
         if r['totalHits'] > 0:
             for records in r["records"]:   
-                print("I found an prior entry: ", records.keys()) 
+                print("I found an prior entry: ", records.keys())                 
                 insertDict = shape_result_dict(records, insertDict, 0, elnName)                
     return insertDict    
 
-def shape_result_dict(records, insertDict, newlyCreated, elnName="rspace"):
-    if elnName == 'elabftw':
-        """
-        if newlyCreated == 0:
-            insertDict.update({f"{records['id']}": [{
-                            "name": records["name"],
-                            "created": records["created"],
-                            "createdBy": records["createdBy"],
-                            "link": link,
-                            "newlyCreated" : newlyCreated
-                            }]
-                    })
-        if newlyCreated == 1:
-        """
-        import ast
+def shape_result_dict(records, insertDict, srvResponse, elnName="rspace"):
+    if elnName == 'elabftw':        
         itemId = records['id']
         name = records['title']        
         print(insertDict)        
@@ -139,7 +129,7 @@ def shape_result_dict(records, insertDict, newlyCreated, elnName="rspace"):
                         "created": records['extra_fields']['username']['value'],
                         "createdBy": records['extra_fields']['create_time']['value'],
                         "link": link,
-                        "newlyCreated" : newlyCreated
+                        "srvResponse" : srvResponse
                         }]
                 })
         return insertDict                         
@@ -149,12 +139,19 @@ def shape_result_dict(records, insertDict, newlyCreated, elnName="rspace"):
         # (i.e. link provided by json: 'https://rstest.int.lin-magdeburg.de/api/inventory/v1/samples/98322' transformed to: 'https://rstest.int.lin-magdeburg.de/inventory/sample/98322')
         link = records["_links"][0]["link"]
         link = '/'.join(link.split('/')[:3] + ['inventory'] +['sample', str(records["id"])])
+        if records['deleted'] == True:
+            print(records)
+            deleted_head = 'TRASHED-CODE_'
+            srvResponse = 101
+        else:            
+            deleted_head = ''
+            srvResponse = 100
         insertDict.update({f"{records['globalId']}": [{
-                                "name": records["name"],
+                                "name": deleted_head + records["name"],
                                 "created": records["created"],
                                 "createdBy": records["createdBy"],
                                 "link": link,
-                                "newlyCreated" : newlyCreated
+                                "srvResponse" : srvResponse
                                 }]
                         })
     return insertDict
@@ -189,7 +186,7 @@ def set_new_sample(sampleParameter, secrets_source='', elnName='rspace'):
         base_json['extra_fields'] = {}
         base_json['extra_fields']['username'] = {}
         base_json['extra_fields']['create_time'] = {}
-        base_json['extra_fields']['experiment_id'] = {}
+        base_json['extra_figitelds']['experiment_id'] = {}
         base_json['extra_fields']['datamatrix_code'] = {}
         base_json['extra_fields']['experiment_name'] = {}
         base_json['extra_fields']['username']['type'] = "text"

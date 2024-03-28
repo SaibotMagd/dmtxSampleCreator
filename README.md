@@ -2,7 +2,14 @@
 
 # dmtxSampleCreator
 
-- browser extension: reads datamatrix code (not other kind of codes) from camera and either link to an already existing sample entry or create a sample in an inventory and paste the link into an text field in [rspace ELN](https://www.researchspace.com/) (support for eLabFTW ELN is work in progress, check out the [Roadmap](README.md#current-roadmap))
+__What is?__
+ - its a browser extension connected to a flask-server backend (to do the API calls without bordering the user)
+ - it reads datamatrix code (not other kind of codes) from camera or barcode scanner (soon!) 
+ - can create a sample in the database or inventory of [rspace ELN](https://www.researchspace.com/) or [elabFTW](https://github.com/elabftw/elabftw) (support for other ELN's is work in progress, check out the [Roadmap](README.md#current-roadmap))
+ - insert a link into an ELN document live inside the UI 
+ - can link to an existing sample entry (created manually beforehand or automatically) 
+ - rapid two click solution: "[one] to open the extension and the camera, scan code, [two] paste the link inside the document"
+ - the minimum metadata to create a unique research sample is automatically read from the currently open document 
 
 ## how to use
 
@@ -19,6 +26,11 @@
   - or use the already prefilled default sample name
   - the "thumb up - insert button" create a new sample entry and insert a link to the sample created into the document
 
+## installation
+- set server IP in dmtx_main.js file
+- add extension to browser (only works in chromium browser)
+- open a document (rspace) or experiment (elabFTW)
+
 ## dependencies (incomplete, use environment.yml for full list)
 
 - Python >= 3.10
@@ -28,10 +40,38 @@
 
 ## configuration/ secret file
 
-- fill the api_secrets.example file and rename it to just ".json"
+- fill the api_secrets.example file and rename it to "api_secrets.json"
   [api_secrets.example](/data/secrets/api_secrets.example.json)
 
+## current Roadmap (3/28/24)
+
+*List in no particular order ;) (Priority [1..5])*
+
+- **[5]**: improve the scanspeed (e.g. shearing correction, image improvements); still work in progress, as it is decend
+- **[5]**: show an error texts if something unusal happen (especially a warning if the a user tried to add a link without being inside an iframe (half-ready; but can be improved)
+- **[4]**: add feature to use barcode hand scanner devices (function largely finished but the browser often swallows characters so that it is not reliable)
+- **[4]**: add an offline modus (e.g. if there's no connection to the server, create a dummy entry and translate the dummy entries when reconnected to the server by creating or pasting links)
+- **[3]**: prevent barcode entries from being deleted (DONE; deleting is impossible and trashing is now taken into account by also displaying trashed samples)
+- **[3]**: since there are considerable problems with searching for tracking codes and processing them, especially in the database of elabFTW, there will be a 3rd possible mode "ELN-agnostic" in the future; this will not write to the internal database of rspace (rspace inventory) or elabFTW (elabFTW database) as before, but will use an LMIS system such as [openLMIS](https://hub.docker.com/u/openlmis/) 
+- **[2]**: improve folder structure/ refactoring (especially use full HTML5 capacities not only javascript and CSS)
+- **[2]**: create a mode to search for samples anywhere not only inside a document (e.g. without pasting the link into a frame just for clicking on inventory link)
+- **[1]**: add button for switching cameras (for devices with front and back cameras, i.e. tablets or smartphones)
+- **[1]**: improved the interface (e.g. hover infos, more intuitve button images, increase visability on touchscreens)
+- **[-]**: add batch-scan feature (**depends on user feedback, so this possible function will be re-evaluated after enduser-tests**)
+- **[-]**: if multiple samples are found for a code, allow only one of the samples to be linked into the text (**conceptual question if such a function should be allowed for sample tracking, as a code should only be used for one sample object; there might be scenarios where this makes sense, on the other hand a double use of a code indicates an error in the database; will be discussed after user feedback**)
+
 ## version history
+
+### 0.7
+- the user or server host does not have to specify whether rspace or elabftw is used, as the client recognizes this information itself and transmits it to the server (the user can tell which ELN has been detected by the color of the frame around the sample tracking extension icon; the color corresponds to the main color of the respective ELN)
+- elabftw API package isn't mandatory anymore for non-elabFTW users
+- added a new warning window if a correct link cannot be inserted (especially if no position for insertion was specified or could be recognized automatically)
+- new handling of trashed samples (deletion is impossible) in the inventory of rspace, these are now found and it is displayed that the searched sample tracking code is in the trash; these samples cannot be overwritten or inserted as long as they have not been restored from the trash; this is to prevent the codes from being overwritten or used several times for different samples
+- to handle errors and access problems better in the future, the variable "newSample" was removed and replaced by a kind of error code called "srvResponse"; this currently has 4 possible values 
+  - "0: no sample code found, 
+  - 100: sample tracking code found, can be entered; 
+  - 101: sample tracking code found in trash, cannot be entered; 
+  - 404: server  communication error"
 
 ### 0.6
 - first working version for elabftw but with some drawbacks:
@@ -88,21 +128,3 @@
 - known bug: it doesn't read the cursor position precise enough, so better to use at the end or the beginning of a field
 - known bug: if a datamatrix code is being used more then once it only paste the link to the first entry found (what should happen if there's more then one entry connected to one datamatrix code? paste all codes? even if there're plenty?)
 
-## current Roadmap
-
-*List in no particular order ;) (Priority [1..5])*
-
-- **[5]**: add full eLabFTW support (DONE)
-- **[5]**: improve the scanspeed (e.g. shearing correction, image improvements)
-- **[5]**: show an error texts if something unusal happen (especially a warning if the a user tried to add a link without being inside an iframe (DONE fixed by adding the link in the beginning of the frame)
-- **[4]**: add feature to use barcode hand scanner devices
-- **[4]**: add an offline modus (e.g. if there's no connection to the server, create a dummy entry and translate the dummy entries when reconnected to the server by creating or pasting links)
-- **[3]**: add more customizations (edit the link text, insert eLabFTW API calls)
-- **[3]**: prevent barcode entries from being deleted
-- **[3]**: add button for switching cameras (for devices with front and back cameras, i.e. tablets or smartphones)
-- **[3]**: improved comprehensibility of the interface (hover infos, more intuitve button images)
-- **[2]**: improve folder structure/ refactoring (especially use full HTML5 capacities not only javascript and CSS)
-- **[2]**: create a mode to search for samples anywhere not only inside a document (e.g. without pasting the link into a frame just for clicking on inventory link)
-- **[2]**: package the extension to use it as regular extension (DONE)
-- **[1]**: add batch-scan feature (**depends on user feedback, so this possible function will be re-evaluated after enduser-tests**)
-- **[1]**: if multiple samples are found for a code, allow only one of the samples to be linked into the text (**conceptual question if such a function should be allowed for sample tracking, as a code should only be used for one sample object; there might be scenarios where this makes sense, on the other hand a double use of a code indicates an error in the database; will be discussed after user feedback**)
